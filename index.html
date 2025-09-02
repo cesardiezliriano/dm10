@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automated Data Insights</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+  <style>
+    /* Custom scrollbar for LLYC theme */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0A263B; /* LLYC Azul Oscuro */
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #878E90; /* LLYC Gris 02 */
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #ACB4B6; /* LLYC Gris 03 */
+    }
+    body {
+      font-family: 'Open Sans', sans-serif; 
+      background-color: #0A263B; /* LLYC Azul Oscuro */
+      color: #FFFFFF; /* LLYC Blanco */
+    }
+     /* Fallback for non-webkit browsers (Firefox) */
+    .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: #878E90 #0A263B; /* LLYC Gris 02 thumb, LLYC Azul Oscuro track */
+    }
+    /* Details/Summary focus outline for LLYC theme */
+    details summary:focus {
+        outline: 2px solid #36A7B7; /* LLYC Turquesa */
+        outline-offset: 2px;
+    }
+    /* General prose styling for markdown content */
+    .prose-llyc h1, .prose-llyc h2, .prose-llyc h3, .prose-llyc h4, .prose-llyc h5, .prose-llyc h6 {
+      font-family: 'Montserrat', sans-serif;
+      color: #0A263B; /* LLYC Azul Oscuro for headings on light backgrounds */
+    }
+    .prose-llyc strong {
+      color: #0A263B; /* LLYC Azul Oscuro for bold text on light backgrounds */
+    }
+    .prose-llyc a {
+      color: #F54963; /* LLYC Red for links */
+    }
+    .prose-llyc a:hover {
+      color: #D93E52; /* Darker LLYC Red for link hover */
+    }
+    .prose-llyc ul > li::before {
+        background-color: #F54963; /* LLYC Red for bullets */
+    }
+
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react-dom/client": "https://esm.sh/react-dom@^19.1.0/client",
+    "@google/genai": "https://esm.sh/@google/genai@^1.4.0",
+    "xlsx": "https://esm.sh/xlsx@0.18.5",
+    "marked": "https://esm.sh/marked@^12.0.0",
+    "pptxgenjs": "https://esm.sh/pptxgenjs@3.12.0"
+  }
+}
+</script>
+  <!-- Babel Standalone for client-side transpilation -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-[#0A263B] text-white">
+  <div id="root"></div>
+  <!-- Updated script tag to use Babel for index.tsx -->
+  <script type="text/babel" data-presets="react,typescript" data-type="module" src="./index.tsx"></script>
+</body>
+</html>

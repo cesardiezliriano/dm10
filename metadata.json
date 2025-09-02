@@ -1,0 +1,6 @@
+{
+  "name": "DM - 10. InsightsBuilder V2",
+  "description": "An application to generate textual insights from campaign, sales, or operational KPI data using AI, aiming to reduce reporting time and improve data comprehension for non-technical users. SIN CONVERSATIONAL API",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
