@@ -1,4 +1,3 @@
-
 import PptxGenJS from 'pptxgenjs';
 import {
     PresentationData,
@@ -612,15 +611,183 @@ export const generatePptxFromData = async (
 
     const brand = BRAND_SCHEMES[presentationJson.brandStyle || BrandStyle.LLYC_DEFAULT];
 
+    // --- Generic Slide Generation Functions (defined within scope to access pres, brand, etc.) ---
+    const addTitleSlide = (content: SlideContent, scheme: BrandScheme, overallPresentationTitle: string) => {
+        const slide = pres.addSlide({ masterName: scheme.masterTitle });
+        const titleText = content.title || overallPresentationTitle || (currentLanguage === Language.ES ? "Informe de Resultados" : "Results Report");
+        addTextSafely(slide, titleText, { placeholder: 'title' });
+        if (content.subtitle) {
+             addTextSafely(slide, content.subtitle, { placeholder: 'subtitle' });
+        }
+        console.log("[PPT Service] Added Generic Title Slide");
+    };
+
+    const addAgendaSlide = (content: SlideContent, scheme: BrandScheme) => {
+        const slide = pres.addSlide({ masterName: scheme.masterContent });
+        addTextSafely(slide, content.title || (currentLanguage === Language.ES ? "Índice" : "Agenda"), { placeholder: 'title' });
+        if (content.agendaPoints && content.agendaPoints.length > 0) {
+            const agendaTextProps: PptxGenJS.TextProps[] = content.agendaPoints.map(point => ({
+                text: point,
+                options: { breakLine: true, bullet: { type: 'bullet', characterCode: "25A0", style: { color: scheme.bulletColor } }, indentLevel: 0, fontSize: 12, fontFace: scheme.bodyFont, color:scheme.textOnLightBody }
+            }));
+            addTextSafely(slide, agendaTextProps, { placeholder: 'body', lineSpacing: 24 });
+        }
+        console.log("[PPT Service] Added Generic Agenda Slide");
+    };
+
+    const addSectionDividerSlide = (content: SlideContent, scheme: BrandScheme) => {
+        const slide = pres.addSlide({ masterName: scheme.masterSectionDivider });
+        addTextSafely(slide, content.title, { placeholder: 'title' });
+        addTextSafely(slide, content.subtitle, { placeholder: 'subtitle' });
+        console.log("[PPT Service] Added Generic Section Divider Slide");
+    };
+    
+    const addExecutiveSummarySlide = (content: SlideContent, scheme: BrandScheme) => {
+        const slide = pres.addSlide({ masterName: scheme.masterContent });
+        addTextSafely(slide, content.title || (currentLanguage === Language.ES ? "Resumen Ejecutivo" : "Executive Summary"), { placeholder: 'title' });
+        if (content.executiveSummaryPoints && content.executiveSummaryPoints.length > 0) {
+            const pointsProps: PptxGenJS.TextProps[] = content.executiveSummaryPoints.map(point => ({
+                text: point,
+                options: { breakLine: true, bullet: { code: "25BA", color: scheme.primary }, indentLevel: 0, fontSize: 12, fontFace: scheme.bodyFont, color: scheme.textOnLightBody }
+            }));
+            addTextSafely(slide, pointsProps, { placeholder: 'body', lineSpacing: 24, autoFit: true });
+        }
+        console.log("[PPT Service] Added Generic Executive Summary Slide");
+    };
+    
+    const addKpiHighlightsSlide = (content: SlideContent, scheme: BrandScheme) => {
+        const slide = pres.addSlide({ masterName: scheme.masterContent });
+        addTextSafely(slide, content.title, { placeholder: 'title' });
+        
+        let yPos = 1.2; // Starting Y position for the body
+        
+        content.kpiHighlightSections?.forEach(section => {
+            slide.addText(section.title, { 
+                x: MARGIN_SIDE_IN, y: yPos, w: CONTENT_WIDTH_IN, h: 0.4, 
+                fontFace: scheme.headlineFont, fontSize: 14, bold: true, color: scheme.kpiHighlightTitleColor 
+            });
+            yPos += 0.5;
+    
+            if (section.points && section.points.length > 0) {
+                const pointsProps: PptxGenJS.TextProps[] = section.points.map(point => ({
+                    text: point,
+                    options: { breakLine: true, bullet: { type: 'bullet', color: scheme.bulletColor }, indentLevel: 0, fontSize: 11, fontFace: scheme.bodyFont, color: scheme.textOnLightBody }
+                }));
+                const textHeight = section.points.length * 0.4 + 0.2;
+                slide.addText(pointsProps, { x: MARGIN_SIDE_IN + 0.2, y: yPos, w: CONTENT_WIDTH_IN - 0.2, h: textHeight, lineSpacing: 22 });
+                yPos += textHeight + 0.3;
+            }
+        });
+        console.log("[PPT Service] Added Generic KPI Highlights Slide");
+    };
+    
+    const addDetailedAnalysisSlide = (content: SlideContent, scheme: BrandScheme) => {
+        const slide = pres.addSlide({ masterName: scheme.masterContent });
+        addTextSafely(slide, content.title, { placeholder: 'title' });
+        if (content.analysisPoints && content.analysisPoints.length > 0) {
+             const pointsProps: PptxGenJS.TextProps[] = content.analysisPoints.map(point => ({
+                text: point,
+                options: { breakLine: true, bullet: { type: 'bullet', color: scheme.bulletColor }, indentLevel: 0, fontSize: 11, fontFace: scheme.bodyFont, color: scheme.textOnLightBody }
+            }));
+            addTextSafely(slide, pointsProps, { placeholder: 'body', lineSpacing: 22 });
+        }
+        console.log("[PPT Service] Added Generic Detailed Analysis Slide");
+    };
+    
+    const addCreativeAnalysisSlide = (content: SlideContent, scheme: BrandScheme, uploadedCreatives?: UploadedImage[]) => {
+        const slide = pres.addSlide({ masterName: scheme.masterContent });
+        addTextSafely(slide, content.title, { placeholder: 'title' });
+        
+        const imageUrl = getImageDataUrl(content.imageIdentifier, uploadedCreatives);
+        const hasPoints = content.analysisPoints && content.analysisPoints.length > 0;
+        
+        const imageWidth = hasPoints ? 4.5 : CONTENT_WIDTH_IN;
+        const imageHeight = 3.5;
+        const imageX = MARGIN_SIDE_IN;
+        const imageY = 1.2;
+        
+        slide.addImage({
+            path: imageUrl,
+            x: imageX, y: imageY, w: imageWidth, h: imageHeight,
+            sizing: { type: 'contain', w: imageWidth, h: imageHeight }
+        });
+        
+        if (hasPoints) {
+            const textX = imageX + imageWidth + 0.3;
+            const textW = CONTENT_WIDTH_IN - imageWidth - 0.3;
+            
+            const pointsProps: PptxGenJS.TextProps[] = content.analysisPoints!.map(point => ({
+                text: point,
+                options: { breakLine: true, bullet: { type: 'bullet', color: scheme.accent }, indentLevel: 0, fontSize: 10, fontFace: scheme.bodyFont, color: scheme.textOnLightBody }
+            }));
+            
+            slide.addText(pointsProps, { x: textX, y: imageY, w: textW, h: imageHeight, lineSpacing: 20, autoFit: true });
+        }
+        console.log("[PPT Service] Added Generic Creative Analysis Slide");
+    };
+    
+    const addConclusionsRecommendationsSlide = (content: SlideContent, scheme: BrandScheme) => {
+        const slide = pres.addSlide({ masterName: scheme.masterContent });
+        addTextSafely(slide, content.title, { placeholder: 'title' });
+        
+        let yPos = 1.2;
+        const contentWidthHalf = CONTENT_WIDTH_IN / 2 - 0.1;
+    
+        if (content.conclusions && content.conclusions.length > 0) {
+            slide.addText(currentLanguage === Language.ES ? 'Conclusiones' : 'Conclusions', {
+                x: MARGIN_SIDE_IN, y: yPos, w: contentWidthHalf, h: 0.4,
+                fontFace: scheme.headlineFont, fontSize: 14, bold: true, color: scheme.conclusionBulletColor
+            });
+            const pointsProps: PptxGenJS.TextProps[] = content.conclusions.map(point => ({
+                text: point,
+                options: { breakLine: true, bullet: { type: 'bullet', color: scheme.conclusionBulletColor }, indentLevel: 0, fontSize: 11, fontFace: scheme.bodyFont, color: scheme.textOnLightBody }
+            }));
+            slide.addText(pointsProps, { 
+                x: MARGIN_SIDE_IN, y: yPos + 0.5, w: contentWidthHalf, h: 3.5, 
+                lineSpacing: 22, autoFit: true 
+            });
+        }
+        
+        if (content.recommendations && content.recommendations.length > 0) {
+             slide.addText(currentLanguage === Language.ES ? 'Recomendaciones' : 'Recommendations', {
+                x: MARGIN_SIDE_IN + contentWidthHalf + 0.2, y: yPos, w: contentWidthHalf, h: 0.4,
+                fontFace: scheme.headlineFont, fontSize: 14, bold: true, color: scheme.recommendationBulletColor
+            });
+             const pointsProps: PptxGenJS.TextProps[] = content.recommendations.map(point => ({
+                text: point,
+                options: { breakLine: true, bullet: { type: 'bullet', color: scheme.recommendationBulletColor }, indentLevel: 0, fontSize: 11, fontFace: scheme.bodyFont, color: scheme.textOnLightBody }
+            }));
+            slide.addText(pointsProps, { 
+                x: MARGIN_SIDE_IN + contentWidthHalf + 0.2, y: yPos + 0.5, w: contentWidthHalf, h: 3.5, 
+                lineSpacing: 22, autoFit: true 
+            });
+        }
+        console.log("[PPT Service] Added Generic Conclusions/Recommendations Slide");
+    };
+
+    const addAnnexSlide = (content: SlideContent, scheme: BrandScheme) => {
+        const slide = pres.addSlide({ masterName: scheme.masterContent });
+        addTextSafely(slide, content.title || (currentLanguage === Language.ES ? "Anexo" : "Annex"), { placeholder: 'title' });
+        if (content.annexContent) {
+            addTextSafely(slide, content.annexContent, { placeholder: 'body', fontSize: 9 });
+        }
+        console.log("[PPT Service] Added Generic Annex Slide");
+    };
+    
+    const addThankYouSlide = (content: SlideContent, scheme: BrandScheme) => {
+        const slide = pres.addSlide({ masterName: scheme.masterTitle });
+        addTextSafely(slide, content.title || (currentLanguage === Language.ES ? "GRACIAS" : "THANK YOU"), { placeholder: 'title' });
+        console.log("[PPT Service] Added Generic Thank You Slide");
+    };
+
+    // --- Main Logic ---
+
     if (presentationJson.brandStyle === BrandStyle.MOTORTEC_REPORT_TEMPLATE) {
         const motortecData = presentationJson.motortecReportContent;
         if (!motortecData) {
             console.error("[PresentationService] Motortec Report Template selected, but motortecReportContent is missing in JSON.");
             throw new Error("Motortec template data is missing.");
         }
-
-        // Call Motortec specific slide functions
-        // Order based on typical presentation flow, check if data exists for each slide
         if(motortecData.slide1_Title) _addMotortecSlide1_Title(pres, motortecData.slide1_Title, brand);
         if(motortecData.slide2_Agenda) _addMotortecSlide2_Agenda(pres, motortecData.slide2_Agenda, brand);
         if(motortecData.slide3_ObjectivesResults) _addMotortecSlide3_ObjectivesResults(pres, motortecData.slide3_ObjectivesResults, brand);
@@ -632,12 +799,8 @@ export const generatePptxFromData = async (
         if(motortecData.slide9_Conversion) _addMotortecSlide9_Conversion(pres, motortecData.slide9_Conversion, brand);
         if(motortecData.slide10_CreativeAnalysisMeta) _addMotortecSlide10_CreativeAnalysisMeta(pres, motortecData.slide10_CreativeAnalysisMeta, brand, uploadedCreativesData);
         if(motortecData.slide11_Organico) _addMotortecSlide11_Organico(pres, motortecData.slide11_Organico, brand, uploadedCreativesData);
-
-        // Add Annex and final thank you if needed based on PDF structure.
-        // For now, just a thank you.
         _addMotortecThankYouSlide(pres, brand);
-
-    } else { // Existing logic for LLYC_DEFAULT and general IFEMA_MADRID styles
+    } else { 
         const clientPeriodText = brand.footerText ? brand.footerText(currentLanguage, presentationJson.clientName, presentationJson.period) :
                                  `${presentationJson.clientName || ""} | ${presentationJson.period || ""}`.trim();
 
@@ -645,130 +808,79 @@ export const generatePptxFromData = async (
         const footerHeight = 0.3;
         const contentWidthThird = CONTENT_WIDTH_IN / 3;
 
-        // --- Define Master Slides (Only if not Motortec template) ---
         if (presentationJson.brandStyle === BrandStyle.LLYC_DEFAULT) {
              pres.defineSlideMaster({
-                title: brand.masterTitle, // LLYC_MASTER_TITLE_SLIDE
-                background: { color: brand.backgroundDark }, // LLYC_AZUL_OSCURO
+                title: brand.masterTitle,
+                background: { color: brand.backgroundDark },
                 objects: [
-                    { 'rect': { x: 0, y: PAGE_HEIGHT_IN - 0.1, w: '100%', h: 0.1, fill: { color: brand.primary }}}, // LLYC_RED accent line
+                    { 'rect': { x: 0, y: PAGE_HEIGHT_IN - 0.1, w: '100%', h: 0.1, fill: { color: brand.primary }}},
                     { 'placeholder': {
                         options: { name: 'title', type: 'title', x: MARGIN_SIDE_IN, y: 1.8, w: CONTENT_WIDTH_IN, h: 2.0, fontFace: brand.headlineFont, fontSize: 40, bold: true, color: brand.textOnDark, align: 'left', valign: 'middle' },
-                        text: 'Título de la Presentación', // Default text
+                        text: 'Título de la Presentación',
                     }},
                     { 'placeholder': {
                          options: { name: 'subtitle', type: 'body', x: MARGIN_SIDE_IN, y: 3.8, w: CONTENT_WIDTH_IN, h: 0.5, fontFace: brand.bodyFont, fontSize: 18, color: brand.textOnDark, align: 'left' },
-                         text: 'Subtítulo', // Default text
+                         text: 'Subtítulo',
                     }},
                     { 'text': { text: brand.logoText, options: { x: MARGIN_SIDE_IN, y: footerY, w: contentWidthThird, h: footerHeight, fontFace: brand.headlineFont, fontSize: 14, bold: true, color: brand.primary } } },
                 ],
             });
             pres.defineSlideMaster({
-                title: brand.masterContent, // LLYC_MASTER_CONTENT_SLIDE
-                background: { color: brand.backgroundLight }, // LLYC_BLANCO
+                title: brand.masterContent,
+                background: { color: brand.backgroundLight },
                 objects: [
-                    { 'rect': { x: 0, y: 0, w: '100%', h: MARGIN_TOP_IN + 0.1, fill: { color: brand.backgroundDark }}}, // LLYC_AZUL_OSCURO header bar
+                    { 'rect': { x: 0, y: 0, w: '100%', h: MARGIN_TOP_IN + 0.1, fill: { color: brand.backgroundDark }}},
                     { 'text': { text: brand.logoText, options: { x: MARGIN_SIDE_IN, y: 0, w: 2, h: MARGIN_TOP_IN + 0.1, fontFace: brand.headlineFont, fontSize: 14, bold:true, color: brand.primary, valign: 'middle' }}},
-                    {
-                        'placeholder': { // Title placeholder for content slides
-                            options: { name: 'title', type: 'title', x: MARGIN_SIDE_IN, y: MARGIN_TOP_IN + 0.3, w: CONTENT_WIDTH_IN, h: 0.5,
-                                       fontFace: brand.headlineFont, fontSize: 24, bold: true, color: brand.textOnLightHeadline },
-                            text: 'Título de Diapositiva',
-                        },
-                    },
-                    {
-                        'placeholder': { // Body placeholder for content slides
-                             options: { name: 'body', type: 'body', x: MARGIN_SIDE_IN, y: MARGIN_TOP_IN + 1.0, w: CONTENT_WIDTH_IN, h: PAGE_HEIGHT_IN - (MARGIN_TOP_IN + 1.0) - (MARGIN_BOTTOM_IN + 0.5),
-                                        fontFace: brand.bodyFont, fontSize: 11, color: brand.textOnLightBody },
-                             text: 'Contenido de la diapositiva',
-                        }
-                    },
-                    { 'text':
-                        { text: clientPeriodText, options: { x: MARGIN_SIDE_IN, y: footerY, w: contentWidthThird - 0.1, h: footerHeight, fontFace: brand.bodyFont, fontSize: 8, color: brand.textOnLightSubtle } }
-                    },
-                    { 'text':
-                        { text: brand.tagline ? brand.tagline(currentLanguage) : "", options: { x: MARGIN_SIDE_IN + contentWidthThird, y: footerY, w: contentWidthThird, h: footerHeight, fontFace: brand.bodyFont, fontSize: 8, color: brand.textOnLightSubtle, align: 'center' } }
-                    },
+                    { 'placeholder': {
+                        options: { name: 'title', type: 'title', x: MARGIN_SIDE_IN, y: MARGIN_TOP_IN + 0.3, w: CONTENT_WIDTH_IN, h: 0.5, fontFace: brand.headlineFont, fontSize: 24, bold: true, color: brand.textOnLightHeadline },
+                        text: 'Título de Diapositiva',
+                    }},
+                    { 'placeholder': {
+                         options: { name: 'body', type: 'body', x: MARGIN_SIDE_IN, y: MARGIN_TOP_IN + 1.0, w: CONTENT_WIDTH_IN, h: PAGE_HEIGHT_IN - (MARGIN_TOP_IN + 1.0) - (MARGIN_BOTTOM_IN + 0.5), fontFace: brand.bodyFont, fontSize: 11, color: brand.textOnLightBody },
+                         text: 'Contenido de la diapositiva',
+                    }},
+                    { 'text': { text: clientPeriodText, options: { x: MARGIN_SIDE_IN, y: footerY, w: contentWidthThird - 0.1, h: footerHeight, fontFace: brand.bodyFont, fontSize: 8, color: brand.textOnLightSubtle } }},
+                    { 'text': { text: brand.tagline ? brand.tagline(currentLanguage) : "", options: { x: MARGIN_SIDE_IN + contentWidthThird, y: footerY, w: contentWidthThird, h: footerHeight, fontFace: brand.bodyFont, fontSize: 8, color: brand.textOnLightSubtle, align: 'center' } }},
                 ],
                 slideNumber: { x: PAGE_WIDTH_IN - MARGIN_SIDE_IN - 0.5, y: PAGE_HEIGHT_IN - MARGIN_BOTTOM_IN - 0.15, fontFace: brand.bodyFont, fontSize: 10, color: brand.textOnLightHeadline, align: "right" }
             });
-             pres.defineSlideMaster({ // LLYC_MASTER_SECTION_DIVIDER_DARK
+             pres.defineSlideMaster({
                 title: brand.masterSectionDivider,
-                background: { color: brand.backgroundDark }, // LLYC_AZUL_OSCURO
+                background: { color: brand.backgroundDark },
                 objects: [
-                     { 'rect': { x: MARGIN_SIDE_IN, y: 2.0, w: 0.15, h: 1.0, fill: { color: brand.primary }}}, // LLYC_RED vertical accent
+                     { 'rect': { x: MARGIN_SIDE_IN, y: 2.0, w: 0.15, h: 1.0, fill: { color: brand.primary }}},
                      { 'placeholder': {
-                        options: { name: 'title', type: 'title', x: MARGIN_SIDE_IN + 0.3, y: 2.0, w: CONTENT_WIDTH_IN - 0.3, h: 1.0,
-                                   fontFace: brand.headlineFont, fontSize: 32, color: brand.textOnDark,
-                                   valign:'middle' },
+                        options: { name: 'title', type: 'title', x: MARGIN_SIDE_IN + 0.3, y: 2.0, w: CONTENT_WIDTH_IN - 0.3, h: 1.0, fontFace: brand.headlineFont, fontSize: 32, color: brand.textOnDark, valign:'middle' },
                         text: 'SECCIÓN'
                     }},
                     { 'placeholder': {
-                        options: { name: 'subtitle', type: 'body', x: MARGIN_SIDE_IN + 0.3, y: 3.0, w: CONTENT_WIDTH_IN - 0.3, h: 0.5,
-                                   fontFace: brand.bodyFont, fontSize: 16, color: brand.textOnLightSubtle, // Use a subtle color on dark if desired
-                                   valign:'top' },
+                        options: { name: 'subtitle', type: 'body', x: MARGIN_SIDE_IN + 0.3, y: 3.0, w: CONTENT_WIDTH_IN - 0.3, h: 0.5, fontFace: brand.bodyFont, fontSize: 16, color: brand.textOnLightSubtle, valign:'top' },
                         text: 'Breve descripción de la sección'
                     }},
                     { 'text': { text: brand.logoText, options: { x: MARGIN_SIDE_IN, y: footerY, w: contentWidthThird, h: footerHeight, fontFace: brand.headlineFont, fontSize: 14, bold:true, color: brand.primary }}},
-                    { 'text':
-                        { text: brand.tagline ? brand.tagline(currentLanguage) : "", options: { x: MARGIN_SIDE_IN + contentWidthThird, y: footerY, w: contentWidthThird, h: footerHeight, fontFace: brand.bodyFont, fontSize: 8, color: brand.textOnLightSubtle, align: 'center' } }
-                    },
+                    { 'text': { text: brand.tagline ? brand.tagline(currentLanguage) : "", options: { x: MARGIN_SIDE_IN + contentWidthThird, y: footerY, w: contentWidthThird, h: footerHeight, fontFace: brand.bodyFont, fontSize: 8, color: brand.textOnLightSubtle, align: 'center' } }},
                 ],
                  slideNumber: { x: PAGE_WIDTH_IN - MARGIN_SIDE_IN - 0.5, y: PAGE_HEIGHT_IN - MARGIN_BOTTOM_IN - 0.15, fontFace: brand.bodyFont, fontSize: 10, color: brand.textOnDark, align: "right" }
             });
         } else if (presentationJson.brandStyle === BrandStyle.IFEMA_MADRID) {
-            // IFEMA Master Slides (example for title, others would follow)
             pres.defineSlideMaster({
-                title: brand.masterTitle, // IFEMA_MASTER_TITLE_SLIDE
-                background: { color: brand.backgroundDark }, // IFEMA_AZUL_PROFUNDO
+                title: brand.masterTitle,
+                background: { color: brand.backgroundDark },
                 objects: [
-                    { 'rect': { x: 0, y: PAGE_HEIGHT_IN - 0.2, w: '100%', h: 0.2, fill: { color: brand.primary }}}, // IFEMA_CORAL footer bar
+                    { 'rect': { x: 0, y: PAGE_HEIGHT_IN - 0.2, w: '100%', h: 0.2, fill: { color: brand.primary }}},
                     { 'placeholder': {
-                         options: { name: 'title', type: 'title', x: MARGIN_SIDE_IN, y: 1.5, w: CONTENT_WIDTH_IN, h: 2.0,
-                                    fontFace: brand.headlineFont, fontSize: 48, bold: true, color: brand.textOnDark,
-                                    align: 'left', valign: 'middle'},
+                         options: { name: 'title', type: 'title', x: MARGIN_SIDE_IN, y: 1.5, w: CONTENT_WIDTH_IN, h: 2.0, fontFace: brand.headlineFont, fontSize: 48, bold: true, color: brand.textOnDark, align: 'left', valign: 'middle'},
                          text: 'Título Principal'
                     }},
                     { 'placeholder': {
-                        options: { name: 'subtitle', type: 'body', x: MARGIN_SIDE_IN, y: 3.5, w: CONTENT_WIDTH_IN, h: 0.75,
-                                   fontFace: brand.bodyFont, fontSize: 20, color: brand.textOnDark,
-                                   align: 'left'},
+                        options: { name: 'subtitle', type: 'body', x: MARGIN_SIDE_IN, y: 3.5, w: CONTENT_WIDTH_IN, h: 0.75, fontFace: brand.bodyFont, fontSize: 20, color: brand.textOnDark, align: 'left'},
                         text: 'Subtítulo Opcional'
                    }},
-                   // IFEMA Logo Placeholder (example)
                    { 'text': { text: brand.logoPlaceholderText, options: { x: PAGE_WIDTH_IN - MARGIN_SIDE_IN - 2.0, y: MARGIN_TOP_IN, w: 2.0, h: 0.5, fontFace: brand.headlineFont, fontSize: 12, color: brand.textOnDark, align:'right' }}}
                 ],
             });
-            // ... other IFEMA masters would be defined here (content, section divider)
+            // NOTE: Other IFEMA masters would be defined here. For this fix, the default content master will be used implicitly by PptxGenJS if not defined.
         }
-
-
-        // --- Generic Slide Generation Functions (using brand scheme) ---
-        const addTitleSlide = (content: SlideContent, scheme: BrandScheme, overallPresentationTitle: string) => {
-            const slide = pres.addSlide({ masterName: scheme.masterTitle });
-            const titleText = content.title || overallPresentationTitle || (currentLanguage === Language.ES ? "Informe de Resultados" : "Results Report");
-            addTextSafely(slide, titleText, { placeholder: 'title' }); // Use addTextSafely
-
-            if (content.subtitle) {
-                 addTextSafely(slide, content.subtitle, { placeholder: 'subtitle' });
-            }
-            console.log("[PPT Service] Added Generic Title Slide");
-        };
-
-        const addAgendaSlide = (content: SlideContent, scheme: BrandScheme) => {
-            const slide = pres.addSlide({ masterName: scheme.masterContent });
-            addTextSafely(slide, content.title || (currentLanguage === Language.ES ? "Índice" : "Agenda"), { placeholder: 'title' });
-            if (content.agendaPoints && content.agendaPoints.length > 0) {
-                const agendaTextProps: PptxGenJS.TextProps[] = content.agendaPoints.map(point => ({
-                    text: point,
-                    options: { breakLine: true, bullet: { type: 'bullet', characterCode: "25A0", style: { color: scheme.bulletColor } }, indentLevel: 0, fontSize: 12, fontFace: scheme.bodyFont, color:scheme.textOnLightBody }
-                }));
-                addTextSafely(slide, agendaTextProps, { placeholder: 'body', lineSpacing: 24 });
-            }
-            console.log("[PPT Service] Added Generic Agenda Slide");
-        };
-        // ... (and all other add...Slide functions: addSectionDividerSlide, etc.)
-        // These remain largely as they were, but now utilize the `scheme` parameter.
 
         if (presentationJson.slides && Array.isArray(presentationJson.slides)) {
             presentationJson.slides.forEach((slideContent, index) => {
@@ -777,13 +889,14 @@ export const generatePptxFromData = async (
                     switch (slideContent.type) {
                         case SlideType.TITLE_SLIDE: addTitleSlide(slideContent, brand, presentationJson.presentationTitle); break;
                         case SlideType.AGENDA_SLIDE: addAgendaSlide(slideContent, brand); break;
-                        // ... (calls to other generic slide functions) ...
-                        // For example:
-                        // case SlideType.EXECUTIVE_SUMMARY: addExecutiveSummarySlide(slideContent, brand); break;
-                        // case SlideType.KPI_HIGHLIGHTS: addKpiHighlightsSlide(slideContent, brand, uploadedCreativesData); break;
-                        // case SlideType.CREATIVE_ANALYSIS: addCreativeAnalysisSlide(slideContent, brand, uploadedCreativesData); break;
-                        // case SlideType.CONCLUSIONS_RECOMMENDATIONS: addConclusionsRecommendationsSlide(slideContent, brand); break;
-                        // case SlideType.THANK_YOU_SLIDE: addThankYouSlide(slideContent, brand); break;
+                        case SlideType.SECTION_DIVIDER_SLIDE: addSectionDividerSlide(slideContent, brand); break;
+                        case SlideType.EXECUTIVE_SUMMARY: addExecutiveSummarySlide(slideContent, brand); break;
+                        case SlideType.KPI_HIGHLIGHTS: addKpiHighlightsSlide(slideContent, brand); break;
+                        case SlideType.DETAILED_ANALYSIS: addDetailedAnalysisSlide(slideContent, brand); break;
+                        case SlideType.CREATIVE_ANALYSIS: addCreativeAnalysisSlide(slideContent, brand, uploadedCreativesData); break;
+                        case SlideType.CONCLUSIONS_RECOMMENDATIONS: addConclusionsRecommendationsSlide(slideContent, brand); break;
+                        case SlideType.ANNEX_SLIDE: addAnnexSlide(slideContent, brand); break;
+                        case SlideType.THANK_YOU_SLIDE: addThankYouSlide(slideContent, brand); break;
                         default: console.warn(`[PresentationService] Generic Style - Unsupported slide type: ${(slideContent as any).type}`);
                     }
                 } catch (slideError) {
@@ -805,18 +918,3 @@ export const generatePptxFromData = async (
         throw writeError;
     }
 };
-
-// NOTE: The generic add...Slide functions (addAgendaSlide, addSectionDividerSlide, etc.) are omitted here for brevity
-// but would be included in the full file, adapted to use the `scheme` object for colors, fonts, etc.
-// The stubs above for _addMotortecSlide... indicate functions that still need full, detailed implementation.
-// The first two _addMotortecSlide1_Title and _addMotortecSlide2_Agenda are more fleshed out as examples.
-// The ones from _addMotortecSlide3 onwards are mostly stubs that need detailed implementation.
-// The placeholder image logic is also simplified for brevity.
-
-// FULL IMPLEMENTATION of _addMotortecSlide3_ObjectivesResults, _addMotortecSlide4_KPICharts, _addMotortecSlide5_ComparativeCharts,
-// _addMotortecSlide6_PlatformDivider, _addMotortecSlide7_DemographicsCreative, _addMotortecSlide8_Consideracion,
-// _addMotortecSlide9_Conversion, _addMotortecSlide10_CreativeAnalysisMeta, _addMotortecSlide11_Organico has been added above.
-
-// The generic slide functions (addAgendaSlide, addSectionDividerSlide, etc.) for LLYC/IFEMA general styles
-// are intentionally omitted in this diff for brevity, assuming they were correct previously and are now
-// in the 'else' block of the main conditional.

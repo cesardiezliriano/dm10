@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect } from 'react';
 import { marked, Renderer, Tokens } from 'marked'; 
 import { GroundingChunk, Language } from '../types.ts'; 
@@ -50,7 +49,7 @@ const createCustomLlycRenderer = (): Renderer => {
           const parsed = this.parser.parseInline(token.tokens);
           if (typeof parsed === 'string') textContent = parsed;
         } catch (e) {
-          console.warn("Markdown Renderer (heading): Error using this.parser.parseInline, falling back to originalText. Error:", e, "Token:", token);
+          console.warn("Markdown Renderer (heading): Error using this.parser.parseInline, falling back to originalText. Error:", e, "Raw token:", token.raw);
         }
       }
       
@@ -67,7 +66,7 @@ const createCustomLlycRenderer = (): Renderer => {
           const parsed = this.parser.parseInline(token.tokens);
           if (typeof parsed === 'string') textContent = parsed;
         } catch (e) {
-          console.warn("Markdown Renderer (strong): Error using this.parser.parseInline, falling back to token.text. Error:", e, "Token:", token);
+          console.warn("Markdown Renderer (strong): Error using this.parser.parseInline, falling back to token.text. Error:", e, "Raw token:", token.raw);
         }
       }
       return `<strong class="text-llyc-azul-oscuro font-semibold">${textContent}</strong>`;
@@ -80,7 +79,7 @@ const createCustomLlycRenderer = (): Renderer => {
           const parsed = this.parser.parseInline(token.tokens);
           if (typeof parsed === 'string') textContent = parsed;
         } catch (e) {
-          console.warn("Markdown Renderer (link): Error using this.parser.parseInline, falling back to token.text. Error:", e, "Token:", token);
+          console.warn("Markdown Renderer (link): Error using this.parser.parseInline, falling back to token.text. Error:", e, "Raw token:", token.raw);
         }
       }
       return `<a href="${token.href || ''}" title="${token.title || ''}" target="_blank" rel="noopener noreferrer" class="text-llyc-red hover:text-llyc-red-dark underline">${textContent}</a>`;
@@ -95,10 +94,10 @@ const createCustomLlycRenderer = (): Renderer => {
                 if (typeof parsed === 'string') {
                     textContent = parsed;
                 } else {
-                    console.warn("Markdown Renderer (listitem): this.parser.parseInline did not return a string, using token.text as fallback. Returned:", parsed, "Token:", token);
+                    console.warn("Markdown Renderer (listitem): this.parser.parseInline did not return a string, using token.text as fallback. Returned:", parsed, "Raw token:", token.raw);
                 }
             } catch(e) {
-                console.warn("Markdown Renderer (listitem): Error using this.parser.parseInline, falling back to token.text. Error:", e, "Token:", token);
+                console.warn("Markdown Renderer (listitem): Error using this.parser.parseInline, falling back to token.text. Error:", e, "Raw token:", token.raw);
             }
         }
         return `<li class="text-llyc-gris-01 ml-5 mb-1">${textContent}</li>`;
@@ -126,10 +125,10 @@ const createCustomLlycRenderer = (): Renderer => {
             if (typeof parsed === 'string') {
                 textContent = parsed;
             } else {
-                console.warn("Markdown Renderer (paragraph): this.parser.parseInline did not return a string, using token.text as fallback. Returned:", parsed, "Token:", token);
+                console.warn("Markdown Renderer (paragraph): this.parser.parseInline did not return a string, using token.text as fallback. Returned:", parsed, "Raw token:", token.raw);
             }
         } catch(e) {
-            console.warn("Markdown Renderer (paragraph): Error using this.parser.parseInline, falling back to token.text. Error:", e, "Token:", token);
+            console.warn("Markdown Renderer (paragraph): Error using this.parser.parseInline, falling back to token.text. Error:", e, "Raw token:", token.raw);
         }
       }
       return `<p class="text-llyc-gris-01 mb-2 leading-relaxed">${textContent}</p>`
@@ -168,7 +167,7 @@ const llycMarkdownRenderer = createCustomLlycRenderer();
 
 const ClipboardIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m9.75 0V9A1.875 1.875 0 0018.125 7.125H15.75c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125h.75m-9.75 0h.008v.008H9.75V12m0 0h3.75m-3.75 0a.375.375 0 01-.375-.375V9.375c0-.207.168-.375.375-.375h1.5a.375.375 0 01.375.375v2.25c0 .207-.168.375-.375.375h-1.5m-6.75-3.375a.75.75 0 00-.75.75v10.5a.75.75 0 00.75.75h9.75a.75.75 0 00.75-.75V12a.75.75 0 00-.75-.75H9.75L6.75 9z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m9.75 0V9A1.875 1.875 0 0018.125 7.125H15.75c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125h.75m-9.75 0h.008v.008H9.75V12m0 0h3.75m-3.75 0a.375.375 0 01-.375-.375V9.375c0-.207.168-.375.375-.375h1.5a.375.375 0 01.375.375v2.25c0 .207-.168-.375-.375-.375h-1.5m-6.75-3.375a.75.75 0 00-.75.75v10.5a.75.75 0 00.75.75h9.75a.75.75 0 00.75-.75V12a.75.75 0 00-.75-.75H9.75L6.75 9z" />
     </svg>
 );
 

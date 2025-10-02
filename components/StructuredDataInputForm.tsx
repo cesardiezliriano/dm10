@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { StructuredCampaignPlatform, TimePeriod, CampaignMetrics, StructuredInsightRequest, Language, UIStringKeys } from '../types.ts'; 
 import { STRUCTURED_PLATFORM_OPTIONS, getTimePeriodLabel, getText } from '../constants.ts'; 
@@ -37,7 +36,7 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Validate current metrics
-    if (Object.values(currentMetrics).some(v => v < 0)) {
+    if (Object.values(currentMetrics).some(v => typeof v === 'number' && v < 0)) {
         alert(getText(language, 'ALERT_METRICS_NEGATIVE'));
         return;
     }
@@ -59,7 +58,7 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
         alert(getText(language, 'ALERT_PREVIOUS_METRICS_INCOMPLETE'));
         return;
       }
-      if (Object.values(previousMetrics).some(v => v < 0)) {
+      if (Object.values(previousMetrics).some(v => typeof v === 'number' && v < 0)) {
         alert(getText(language, 'ALERT_METRICS_NEGATIVE'));
         return;
       }

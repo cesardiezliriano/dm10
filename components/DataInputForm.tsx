@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { DataSource, InsightRequest, Language, UploadedImage, BrandStyle, AggregatedDataBlock, ApiConnection } from '../types.ts'; 
@@ -118,7 +117,8 @@ export const DataInputForm: React.FC<DataInputFormProps> = ({ onSubmit, isLoadin
 
       } catch (error) {
         console.error("Error processing Excel file:", error);
-        setExcelFileMessage(`${getText(language, 'FILE_ERROR_PROCESS_MESSAGE', file.name)}. ${getText(language, 'FILE_ERROR_PROCESS_DETAIL')} ${error instanceof Error ? error.message : ''}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        setExcelFileMessage(`${getText(language, 'FILE_ERROR_PROCESS_MESSAGE', file.name)}. ${getText(language, 'FILE_ERROR_PROCESS_DETAIL')} ${errorMessage}`);
       } finally {
         if (excelFileInputRef.current) excelFileInputRef.current.value = "";
       }
@@ -155,7 +155,8 @@ export const DataInputForm: React.FC<DataInputFormProps> = ({ onSubmit, isLoadin
     }
 
 
-    const promises: Promise<UploadedImage | null>[] = filesToProcess.map(file => {
+    // Fix: Explicitly type `file` as `File` to resolve incorrect type inference to `unknown`.
+    const promises: Promise<UploadedImage | null>[] = filesToProcess.map((file: File) => {
         return new Promise((resolve) => {
             if (!['image/png', 'image/jpeg', 'image/gif'].includes(file.type)) {
                 localErrors.push(`${getText(language, 'FILE_TYPE_INVALID')} (${file.name})`);

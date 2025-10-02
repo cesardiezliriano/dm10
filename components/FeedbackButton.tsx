@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Language } from '../types.ts';
 import { getText } from '../constants.ts';
@@ -17,29 +16,20 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({ language }) => {
   const recipients = "luisma.nunez@llyc.global,marta.devicente@llyc.global,cesar.diez@llyc.global";
 
   const handleFeedbackClick = () => {
-    console.log("FeedbackButton: handleFeedbackClick function HAS BEEN CALLED.");
     const subject = encodeURIComponent(getText(language, 'FEEDBACK_EMAIL_SUBJECT'));
     const body = encodeURIComponent(getText(language, 'FEEDBACK_EMAIL_BODY_PLACEHOLDER'));
     
-    // Construct Gmail compose URL
-    const gmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${recipients}&su=${subject}&body=${body}`;
+    // Use a standard mailto: link for universal compatibility
+    const mailtoLink = `mailto:${recipients}?subject=${subject}&body=${body}`;
     
-    console.log(`FeedbackButton: Attempting to open Gmail compose URL: ${gmailComposeUrl}`);
-    try {
-      window.open(gmailComposeUrl, '_blank', 'noopener,noreferrer');
-      console.log("FeedbackButton: window.open() for Gmail compose URL attempted.");
-    } catch (error) {
-      console.error("FeedbackButton: Error during window.open() for Gmail:", error);
-    }
+    // Navigate to the mailto link. This is more reliable than window.open for email clients.
+    window.location.href = mailtoLink;
   };
 
   return (
     <button
       type="button"
-      onClick={() => {
-        console.log("FeedbackButton: Inline onClick triggered!"); 
-        handleFeedbackClick();
-      }}
+      onClick={handleFeedbackClick}
       className="fixed top-1/2 -translate-y-1/2 right-4 z-50 p-3 bg-[#F54963] text-white rounded-full shadow-lg hover:bg-[#D93E52] focus:outline-none focus:ring-2 focus:ring-[#36A7B7] focus:ring-offset-2 focus:ring-offset-[#0A263B] transition-colors duration-150"
       title={getText(language, 'BUTTON_FEEDBACK_TOOLTIP')}
       aria-label={getText(language, 'BUTTON_FEEDBACK_TOOLTIP')}
