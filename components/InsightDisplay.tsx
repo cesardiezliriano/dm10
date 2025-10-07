@@ -105,7 +105,7 @@ const createCustomLlycRenderer = (): Renderer => {
     
     customRenderer.list = function(this: Renderer, token: Tokens.List): string {
       if (!token.items || !Array.isArray(token.items) || token.items.length === 0) {
-        console.warn("Markdown Renderer (list): token.items is undefined, not an array, or empty. Rendering empty list. Token:", token);
+        console.warn("Markdown Renderer (list): token.items is undefined, not an array, or empty. Rendering empty list. Raw token:", token.raw);
         return token.ordered ? "<ol class=\"list-decimal list-inside text-llyc-gris-01 space-y-1 my-2\"></ol>" : "<ul class=\"list-disc list-inside text-llyc-gris-01 space-y-1 my-2\"></ul>";
       }
 
