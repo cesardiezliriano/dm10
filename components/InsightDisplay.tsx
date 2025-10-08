@@ -1,3 +1,5 @@
+
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { marked, Renderer, Tokens } from 'marked'; 
 import { GroundingChunk, Language } from '../types.ts'; 
@@ -203,8 +205,9 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
   if (insight === null) {
     return (
       <div className="text-llyc-gris-02 p-4 border border-llyc-gris-03 rounded-lg bg-llyc-azul-oscuro/5 h-full flex flex-col items-center justify-center text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-llyc-gris-03 mb-3 opacity-70" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M11 3a1 1 0 100 2h.01a1 1 0 100-2H11zM11 6a1 1 0 011 1v3a1 1 0 01-2 0V7a1 1 0 011-1zM4.607 6.37A1 1 0 014 7v8a1 1 0 00.09.414l.05.093A8.001 8.001 0 0010 18c2.21 0 4.21-.895 5.657-2.343l.05-.093A1 1 0 0016 15V7a1 1 0 01-.607-.63L15 6H5l-.393.37zM12 19a1 1 0 01-1-1v-.01A8.093 8.093 0 0012 5.06v.006c.995.207 1.916.63 2.707 1.229A1.006 1.006 0 0115 7v8a.999.999 0 01-.293.707 6.003 6.003 0 01-2.707 1.229V18a1 1 0 01-1 1z" />
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-12 h-12 text-llyc-gris-03 mb-3 opacity-70">
+          <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32l8.4-8.4z" />
+          <path d="M5.25 5.25a3 3 0 00-3 3v10.5a3 3 0 003 3h10.5a3 3 0 003-3V13.5a.75.75 0 00-1.5 0v5.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5V8.25a1.5 1.5 0 011.5-1.5h5.25a.75.75 0 000-1.5H5.25z" />
         </svg>
         <p className="text-sm">{placeholderText}</p>
       </div>

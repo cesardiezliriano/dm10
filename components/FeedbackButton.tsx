@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Language } from '../types.ts';
 import { getText } from '../constants.ts';
@@ -8,7 +9,7 @@ interface FeedbackButtonProps {
 
 const FeedbackButtonIcon: React.FC = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M18 12.75h-.75a.375.375 0 01-.375-.375V12a3.375 3.375 0 00-3.375-3.375H12.25c-.378 0-.74.043-1.09.121A3.375 3.375 0 006.75 12.75v.003a.375.375 0 01-.375.375H6a2.25 2.25 0 00-2.25 2.25v.75a2.25 2.25 0 002.25 2.25h.75a.375.375 0 01.375.375v.375a3.375 3.375 0 003.375 3.375h3.75a3.375 3.375 0 003.375-3.375v-.375a.375.375 0 01.375-.375h.75a2.25 2.25 0 002.25-2.25v-.75a2.25 2.25 0 00-2.25-2.25zM9.75 12a.75.75 0 100-1.5.75.75 0 000 1.5zm3 0a.75.75 0 100-1.5.75.75 0 000 1.5zm3 0a.75.75 0 100-1.5.75.75 0 000 1.5z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
   </svg>
 );
 
@@ -30,7 +31,7 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({ language }) => {
     <button
       type="button"
       onClick={handleFeedbackClick}
-      className="fixed top-1/2 -translate-y-1/2 right-4 z-50 p-3 bg-[#F54963] text-white rounded-full shadow-lg hover:bg-[#D93E52] focus:outline-none focus:ring-2 focus:ring-[#36A7B7] focus:ring-offset-2 focus:ring-offset-[#0A263B] transition-colors duration-150"
+      className="fixed bottom-4 right-4 z-50 p-3 bg-[#F54963] text-white rounded-full shadow-lg hover:bg-[#D93E52] focus:outline-none focus:ring-2 focus:ring-[#36A7B7] focus:ring-offset-2 focus:ring-offset-white transition-colors duration-150 lg:absolute lg:top-1/2 lg:-translate-y-1/2 lg:right-auto lg:left-full lg:ml-4 lg:bottom-auto"
       title={getText(language, 'BUTTON_FEEDBACK_TOOLTIP')}
       aria-label={getText(language, 'BUTTON_FEEDBACK_TOOLTIP')}
     >

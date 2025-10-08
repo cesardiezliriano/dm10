@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Tool, GenerateContentParameters, GenerateContentResponse, Part } from "@google/genai";
 import { GEMINI_TEXT_MODEL, PROMPT_TEMPLATES, getText, getTimePeriodLabel, PROMPT_TEMPLATE_FOR_PPT_JSON } from '../constants.ts';
 import { DataSource, GenerateContentGeminiResponse, Candidate, GroundingMetadata, GroundingChunk, StructuredInsightRequest, StructuredCampaignPlatform, Language, PresentationData, InsightRequest, UploadedImage, BrandStyle } from '../types.ts';
@@ -256,7 +257,7 @@ export const generateStructuredInsight = async (
   }
   const ai = new GoogleGenAI({ apiKey: apiKey });
 
-  const timePeriodLabel = getTimePeriodLabel(language, request.timePeriod); 
+  const timePeriodLabel = getTimePeriodLabel(language, request.timePeriod, request.startDate, request.endDate); 
   const languageInstruction = `Respond in ${language}.`;
   
   let basePromptFn;

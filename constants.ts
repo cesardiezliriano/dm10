@@ -1,4 +1,5 @@
 
+
 import { DataSource, StructuredCampaignPlatform, TimePeriod, Language, SlideType, KpiItem, PresentationData, SlideContent, KpiHighlightSection, BrandStyle, MotortecReportContent, HelpTopic, UIStringKeys, CampaignMetrics } from './types.ts';
 
 // --- Critical App Configuration ---
@@ -214,7 +215,7 @@ const UI_STRINGS: Record<UIStringKeys, Record<Language, string> | Partial<Record
   },
   STATUS_CONNECTED: { [Language.EN]: "Connected", [Language.ES]: "Conectado" },
   STATUS_CONNECTING: { [Language.EN]: "Connecting...", [Language.ES]: "Conectando..." },
-  STATUS_DISCONNECTED: { [Language.EN]: "Disconnected", [Language.ES]: "Desconectado" },
+  STATUS_DISCONNECTED: { [Language.EN]: "Disconnected", [Language.ES]: "Desconectar" },
   API_DATA_SUMMARY_HEADER: { [Language.EN]: "Connected Data Summary", [Language.ES]: "Resumen de Datos Conectados" },
   LABEL_GOOGLE_CLIENT_ID_CONFIG_WARNING: {
     [Language.EN]: "Google connections are disabled. The Google Client ID has not been configured by the application developer.",
@@ -260,6 +261,11 @@ const UI_STRINGS: Record<UIStringKeys, Record<Language, string> | Partial<Record
   // StructuredDataInputForm
   LABEL_PLATFORM: { [Language.EN]: "Platform", [Language.ES]: "Plataforma" },
   LABEL_TIME_PERIOD: { [Language.EN]: "Time Period", [Language.ES]: "Periodo de Tiempo" },
+  TIME_PERIOD_7_DAYS: { [Language.EN]: "Last 7 Days", [Language.ES]: "Últimos 7 días" },
+  TIME_PERIOD_14_DAYS: { [Language.EN]: "Last 14 Days", [Language.ES]: "Últimos 14 días" },
+  TIME_PERIOD_30_DAYS: { [Language.EN]: "Last 30 Days", [Language.ES]: "Últimos 30 días" },
+  TIME_PERIOD_90_DAYS: { [Language.EN]: "Last 90 Days", [Language.ES]: "Últimos 90 días" },
+  TIME_PERIOD_CUSTOM: { [Language.EN]: "Custom Range...", [Language.ES]: "Rango Personalizado..." },
   SECTION_TITLE_CURRENT_PERIOD: { [Language.EN]: "Current Period Metrics", [Language.ES]: "Métricas del Periodo Actual" },
   LABEL_COMPARE_PERIOD: { [Language.EN]: "Compare to previous period", [Language.ES]: "Comparar con periodo anterior" },
   SECTION_TITLE_PREVIOUS_PERIOD: { [Language.EN]: "Previous Period Metrics", [Language.ES]: "Métricas del Periodo Anterior" },
@@ -363,7 +369,7 @@ const UI_STRINGS: Record<UIStringKeys, Record<Language, string> | Partial<Record
   },
   HELP_TOPIC_DATA_INPUT_TIPS_ANSWER: {
     [Language.EN]: "For the best results in **Aggregated Data Analysis**:\n\n1.  **Be Clear**: If pasting data from multiple sources (e.g., Google Ads and Meta Ads), label each section clearly. Example:\n    `=== Google Ads - Last 30 Days ===\n    Spend: $1000, Clicks: 2000, Conversions: 50\n\n    === Meta Ads - Last 30 Days ===\n    Spend: $800, Impressions: 100000, Leads: 30`\n2.  **Context is Key**: Use the optional fields (Client Name, Sector, Market, Additional Context) to give the AI more background. This helps generate more relevant insights.\n3.  **Summarized Data**: Provide summarized data (e.g., total spend, average CPC) rather than raw, row-level data dumps.\n4.  **Excel Files**: If using Excel, ensure data is on the first sheet in a clear tabular format. The content will be appended to the text area.\n5.  **Specific Questions**: Use the 'Specific Questions' field to guide the AI if you have particular areas of interest (e.g., \"Why did our CPA increase this month?\").\n6.  **Creatives**: Upload up to 5 images for visual analysis. The AI will comment on their visual elements and potential effectiveness.",
-    [Language.ES]: "Para obtener los mejores resultados en el **Análisis de Datos Agregados**:\n\n1.  **Sé Claro/a**: Si pegas datos de múltiples fuentes (ej., Google Ads y Meta Ads), etiqueta cada sección claramente. Ejemplo:\n    `=== Google Ads - Últimos 30 Días ===\n    Gasto: $1000, Clics: 2000, Conversiones: 50\n\n    === Meta Ads - Últimos 30 Días ===\n    Gasto: $800, Impresiones: 100000, Leads: 30`\n2.  **El Contexto es Clave**: Utiliza los campos opcionales (Nombre del Cliente, Sector, Mercado, Contexto Adicional) para dar más trasfondo a la IA. Esto ayuda a generar insights más relevantes.\n3.  **Datos Resumidos**: Proporciona datos resumidos (ej., gasto total, CPC promedio) en lugar de volcados de datos brutos a nivel de fila.\n4.  **Archivos Excel**: Si usas Excel, asegúrate de que los datos estén en la primera hoja en un formato tabular claro. El contenido se añadirá al área de texto.\n5.  **Preguntas Específicas**: Usa el campo 'Preguntas Específicas' para guiar a la IA si tienes áreas particulares de interés (ej., \"¿Por qué aumentó nuestro CPA este mes?\").\n6.  **Creatividades**: Sube hasta 5 imágenes para análisis visual. La IA comentará sobre sus elementos visuales y su posible efectividad."
+    [Language.ES]: "Para obtener los mejores resultados en el **Análisis de Datos Agregados**:\n\n1.  **Sé Claro/a**: Si pegas datos de múltiples fuentes (ej., Google Ads y Meta Ads), etiqueta cada sección claramente. Ejemplo:\n    `=== Google Ads - Últimos 30 Días ===\n    Gasto: $1000, Clics: 2000, Conversiones: 50\n\n    === Meta Ads - Últimos 30 Días ===\n    Gasto: $800, Impresiones: 100000, Leads: 30`\n2.  **El Contexto es Clave**: Utiliza los campos opcionales (Nombre del Cliente, Sector, Mercado, Contexto Adicional) para dar más trasfondo a la IA. Esto ayuda a generar insights más relevantes.\n3.  **Datos Resumidos**: Proporciona datos resumidos (ej., gasto total, CPC promedio) en lugar de volcados de datos brutos a nivel de fila.\n4.  **Archivos Excel**: Si usas Excel, asegúrate de que los datos estén en la primera hoja en un formato tabular claro. El contenido se añadirá al área de texto.\n5.  **Preguntas Específicas**: Usa el campo 'Preguntas Específicas' para guiar a la IA si tienes áreas particulares de interés (ej., \"¿Por qué aumentó nuestro CPA este mes?\").\n6.  **Creatividades**: Sube hasta 5 imágenes para análisis visual. La IA comentará sobre sus elementos visuais y su posible efectividad."
   },
   HELP_TOPIC_UNDERSTANDING_INSIGHTS_QUESTION: {
     [Language.EN]: "How do I interpret the generated insights?",
@@ -398,12 +404,6 @@ export const getText = (lang: Language, key: UIStringKeys, ...args: string[]): s
 
 
 export const GEMINI_TEXT_MODEL = "gemini-2.5-flash";
-
-// Language Options
-export const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
-  { value: Language.ES, label: "Español" }, 
-  { value: Language.EN, label: "English" },
-];
 
 // Brand Style Options
 export const BRAND_STYLE_OPTIONS: { value: BrandStyle; label: string }[] = [
@@ -482,19 +482,37 @@ export const STRUCTURED_PLATFORM_OPTIONS: { value: StructuredCampaignPlatform; l
   { value: StructuredCampaignPlatform.META_ADS, label: "Meta Ads" },
 ];
 
-export const TIME_PERIOD_OPTIONS: { value: TimePeriod; label: string }[] = [
-  { value: TimePeriod.DAYS_7, label: "Last 7 Days" }, 
-  { value: TimePeriod.DAYS_14, label: "Last 14 Days" },
-  { value: TimePeriod.DAYS_30, label: "Last 30 Days" },
-  { value: TimePeriod.DAYS_90, label: "Last 90 Days" },
+export const getTimePeriodOptions = (lang: Language): { value: TimePeriod; label: string }[] => [
+    { value: TimePeriod.DAYS_7, label: getText(lang, 'TIME_PERIOD_7_DAYS') },
+    { value: TimePeriod.DAYS_14, label: getText(lang, 'TIME_PERIOD_14_DAYS') },
+    { value: TimePeriod.DAYS_30, label: getText(lang, 'TIME_PERIOD_30_DAYS') },
+    { value: TimePeriod.DAYS_90, label: getText(lang, 'TIME_PERIOD_90_DAYS') },
+    { value: TimePeriod.CUSTOM, label: getText(lang, 'TIME_PERIOD_CUSTOM') },
 ];
 
-export const getTimePeriodLabel = (lang: Language, period: TimePeriod): string => {
+export const getTimePeriodLabel = (lang: Language, period: TimePeriod, startDate?: string, endDate?: string): string => {
+    if (period === TimePeriod.CUSTOM && startDate && endDate) {
+        try {
+            const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
+            const locale = lang === Language.ES ? 'es-ES' : 'en-US';
+            const formattedStart = new Date(startDate + 'T00:00:00Z').toLocaleDateString(locale, options);
+            const formattedEnd = new Date(endDate + 'T00:00:00Z').toLocaleDateString(locale, options);
+            
+            return lang === Language.ES 
+              ? `del ${formattedStart} al ${formattedEnd}`
+              : `${formattedStart} - ${formattedEnd}`;
+        } catch (e) {
+            console.error("Error formatting custom date range:", e);
+            return `${startDate} to ${endDate}`; // Fallback
+        }
+    }
+
     const labels = {
-        [TimePeriod.DAYS_7]: { [Language.EN]: "Last 7 Days", [Language.ES]: "Últimos 7 Días" },
-        [TimePeriod.DAYS_14]: { [Language.EN]: "Last 14 Days", [Language.ES]: "Últimos 14 Días" },
-        [TimePeriod.DAYS_30]: { [Language.EN]: "Last 30 Days", [Language.ES]: "Últimos 30 Días" },
-        [TimePeriod.DAYS_90]: { [Language.EN]: "Last 90 Days", [Language.ES]: "Últimos 90 Días" },
+        [TimePeriod.DAYS_7]: { [Language.EN]: "the last 7 days", [Language.ES]: "los últimos 7 días" },
+        [TimePeriod.DAYS_14]: { [Language.EN]: "the last 14 days", [Language.ES]: "los últimos 14 días" },
+        [TimePeriod.DAYS_30]: { [Language.EN]: "the last 30 days", [Language.ES]: "los últimos 30 días" },
+        [TimePeriod.DAYS_90]: { [Language.EN]: "the last 90 days", [Language.ES]: "los últimos 90 días" },
+        [TimePeriod.CUSTOM]: { [Language.EN]: "the custom period", [Language.ES]: "el periodo personalizado" }
     };
     return labels[period]?.[lang] || labels[period]?.[Language.EN] || String(period);
 };
@@ -769,6 +787,7 @@ ${textInsight}
 Your output MUST be a single, valid JSON object matching the 'PresentationData' TypeScript interface.
 ${langInstruction}
 Do NOT include any explanatory text before or after the JSON object.
+**CRITICAL CONSTRAINT:** The generated 'slides' array in the JSON **must contain at least 5 slides**, including an Executive Summary, a detailed analysis or KPI slide, and a Conclusions/Recommendations slide, all populated with content extracted from the 'AI-Generated Textual Insight'. A presentation with only a title and agenda is an invalid and incomplete response.
 The JSON should follow this structure (note 'brandStyle' field):
 
 \`\`\`json

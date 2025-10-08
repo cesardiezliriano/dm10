@@ -78,6 +78,7 @@ export enum TimePeriod {
   DAYS_14 = "14",
   DAYS_30 = "30",
   DAYS_90 = "90",
+  CUSTOM = "CUSTOM",
 }
 
 export interface CampaignMetrics {
@@ -92,6 +93,8 @@ export interface StructuredInsightRequest {
   timePeriod: TimePeriod;
   currentMetrics: CampaignMetrics;
   previousMetrics?: CampaignMetrics; // Optional, for comparison
+  startDate?: string; // e.g., "2024-05-01"
+  endDate?: string;   // e.g., "2024-05-23"
 }
 
 // Language Selection
@@ -441,7 +444,13 @@ export type UIStringKeys =
   | "LABEL_META_APP_ID_CONFIG_WARNING"
   | "ERROR_META_AUTH"
   | "ERROR_META_API"
-  | "ERROR_META_HTTPS_REQUIRED";
+  | "ERROR_META_HTTPS_REQUIRED"
+  | "TIME_PERIOD_7_DAYS"
+  | "TIME_PERIOD_14_DAYS"
+  | "TIME_PERIOD_30_DAYS"
+  | "TIME_PERIOD_90_DAYS"
+  | "TIME_PERIOD_CUSTOM";
+
 
 // --- Help System Types ---
 export interface HelpTopic {

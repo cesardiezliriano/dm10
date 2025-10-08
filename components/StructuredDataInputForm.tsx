@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { StructuredCampaignPlatform, TimePeriod, CampaignMetrics, StructuredInsightRequest, Language, UIStringKeys } from '../types.ts'; 
-import { STRUCTURED_PLATFORM_OPTIONS, getTimePeriodLabel, getText } from '../constants.ts'; 
+import { STRUCTURED_PLATFORM_OPTIONS, getTimePeriodOptions, getText } from '../constants.ts'; 
 
 interface StructuredDataInputFormProps {
   onSubmit: (request: StructuredInsightRequest) => void; 
   isLoading: boolean;
   language: Language; 
+}
+
+interface CalculatedMetrics {
+    ctr: number;
+    cpc: number;
+    cpa: number;
+    cvr: number;
 }
 
 const initialMetrics: CampaignMetrics = {
@@ -15,34 +23,204 @@ const initialMetrics: CampaignMetrics = {
   cost: 0,
 };
 
+const initialMetricsInput = { impressions: '', clicks: '', conversions: '', cost: '' };
+
+const initialCalculatedMetrics: CalculatedMetrics = {
+    ctr: 0,
+    cpc: 0,
+    cpa: 0,
+    cvr: 0,
+};
+
+// Helper to get date string in YYYY-MM-DD format
+const getISODateString = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+};
+
+const TrendIndicator: React.FC<{ change: number, isPositiveGood: boolean }> = ({ change, isPositiveGood }) => {
+    if (isNaN(change) || !isFinite(change) || change === 0) {
+        return <span className="text-gray-500" title="No change">—</span>;
+    }
+
+    const isGood = isPositiveGood ? change > 0 : change < 0;
+    const color = isGood ? 'text-green-500' : 'text-red-500';
+    const Icon = change > 0 
+        ? () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L6.22 8.78a.75.75 0 11-1.06-1.06l4.25-4.25a.75.75 0 011.06 0l4.25 4.25a.75.75 0 11-1.06 1.06L10.75 5.612V16.25a.75.75 0 01-.75-.75z" clipRule="evenodd" /></svg>
+        : () => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.03-3.176a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L6.22 12.28a.75.75 0 111.06-1.06l3.03 3.176V3.75A.75.75 0 0110 3z" clipRule="evenodd" /></svg>;
+
+    return (
+        <span className={`flex items-center text-xs font-semibold ${color}`} title={`${(change * 100).toFixed(1)}% change`}>
+            <Icon />
+            <span>{Math.abs(change * 100).toFixed(1)}%</span>
+        </span>
+    );
+};
+
+
 export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = ({ onSubmit, isLoading, language }) => {
   const [platform, setPlatform] = useState<StructuredCampaignPlatform>(StructuredCampaignPlatform.GOOGLE_ADS);
   const [timePeriod, setTimePeriod] = useState<TimePeriod>(TimePeriod.DAYS_30);
+  
+  const [startDate, setStartDate] = useState<string>(() => getISODateString(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000)));
+  const [endDate, setEndDate] = useState<string>(() => getISODateString(new Date()));
+  
+  // State for numeric values used in calculations
   const [currentMetrics, setCurrentMetrics] = useState<CampaignMetrics>(initialMetrics);
   const [previousMetrics, setPreviousMetrics] = useState<CampaignMetrics>(initialMetrics);
-  const [compare, setCompare] = useState<boolean>(false);
+  
+  // State for string values displayed in input fields to handle locale formatting
+  const [currentMetricsInput, setCurrentMetricsInput] = useState(initialMetricsInput);
+  const [previousMetricsInput, setPreviousMetricsInput] = useState(initialMetricsInput);
 
-  const handleMetricChange = (e: React.ChangeEvent<HTMLInputElement>, period: 'current' | 'previous') => {
-    const { name, value } = e.target;
-    const valueAsNumber = value === '' ? 0 : parseFloat(value);
-    const metricSetter = period === 'current' ? setCurrentMetrics : setPreviousMetrics;
-    
-    metricSetter(prev => ({
-      ...prev,
-      [name]: valueAsNumber
-    }));
+  const [currentCalculated, setCurrentCalculated] = useState<CalculatedMetrics>(initialCalculatedMetrics);
+  const [previousCalculated, setPreviousCalculated] = useState<CalculatedMetrics>(initialCalculatedMetrics);
+  const [compare, setCompare] = useState<boolean>(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [comparisonPeriodLabel, setComparisonPeriodLabel] = useState<string>('');
+
+  const timePeriodOptions = getTimePeriodOptions(language);
+
+  // Helper to parse a locale-specific string into a number
+  const parseLocaleNumber = (str: string, lang: Language): number => {
+      if (typeof str !== 'string' || str.trim() === '') return 0;
+      
+      let standardString: string;
+      if (lang === Language.ES) {
+          // For Spanish: remove thousand separators (.) and replace decimal separator (,) with a dot.
+          standardString = str.replace(/\./g, '').replace(',', '.');
+      } else { // For English (EN) and fallback
+          // For English: remove thousand separators (,). The dot is already the decimal separator.
+          standardString = str.replace(/,/g, '');
+      }
+
+      const num = parseFloat(standardString);
+      return isNaN(num) ? 0 : num;
   };
+
+  // Helper to format a number into a locale-specific string for display on blur
+  const formatNumberForDisplay = (num: number, lang: Language, field: keyof CampaignMetrics): string => {
+      if (num === 0) return ''; // Show empty string for 0, easier for user to start typing.
+      const locale = lang === Language.ES ? 'es-ES' : 'en-US';
+      const isCost = field === 'cost';
+      
+      const options: Intl.NumberFormatOptions = {
+          useGrouping: true,
+          minimumFractionDigits: isCost ? 2 : 0,
+          maximumFractionDigits: isCost ? 2 : 0,
+      };
+
+      return new Intl.NumberFormat(locale, options).format(num);
+  };
+
+  useEffect(() => {
+    const calculate = (metrics: CampaignMetrics): CalculatedMetrics => {
+        const clicks = metrics.clicks || 0;
+        const impressions = metrics.impressions || 0;
+        const conversions = metrics.conversions || 0;
+        const cost = metrics.cost || 0;
+
+        return {
+            ctr: impressions > 0 ? (clicks / impressions) : 0,
+            cpc: clicks > 0 ? (cost / clicks) : 0,
+            cpa: conversions > 0 ? (cost / conversions) : 0,
+            cvr: clicks > 0 ? (conversions / clicks) : 0,
+        };
+    };
+
+    const newErrors: { [key: string]: string } = {};
+    if (currentMetrics.clicks > currentMetrics.impressions) {
+        newErrors.currentClicks = getText(language, 'ALERT_CLICKS_GT_IMPRESSIONS');
+        newErrors.currentImpressions = getText(language, 'ALERT_CLICKS_GT_IMPRESSIONS');
+    }
+    if (compare && previousMetrics.clicks > previousMetrics.impressions) {
+        newErrors.previousClicks = getText(language, 'ALERT_CLICKS_GT_IMPRESSIONS');
+        newErrors.previousImpressions = getText(language, 'ALERT_CLICKS_GT_IMPRESSIONS');
+    }
+    if (timePeriod === TimePeriod.CUSTOM && startDate && endDate && new Date(startDate) > new Date(endDate)) {
+        newErrors.dateRange = language === Language.ES ? 'La fecha de inicio no puede ser posterior a la fecha de fin.' : 'Start date cannot be after end date.';
+    }
+    
+    setErrors(newErrors);
+    
+    setCurrentCalculated(calculate(currentMetrics));
+    if (compare) {
+        setPreviousCalculated(calculate(previousMetrics));
+    }
+  }, [currentMetrics, previousMetrics, compare, language, timePeriod, startDate, endDate]);
+
+  useEffect(() => {
+    if (compare && timePeriod === TimePeriod.CUSTOM && startDate && endDate) {
+      const start = new Date(startDate + 'T00:00:00Z');
+      const end = new Date(endDate + 'T00:00:00Z');
+      const duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+      const prevEnd = new Date(start);
+      prevEnd.setUTCDate(prevEnd.getUTCDate() - 1);
+      
+      const prevStart = new Date(prevEnd);
+      prevStart.setUTCDate(prevStart.getUTCDate() - duration);
+
+      const locale = language === Language.ES ? 'es-ES' : 'en-US';
+      const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' };
+      
+      const label = `(${language === Language.ES ? 'Compara con:' : 'Compares to:'} ${prevStart.toLocaleDateString(locale, options)} - ${prevEnd.toLocaleDateString(locale, options)})`;
+      setComparisonPeriodLabel(label);
+    } else {
+      setComparisonPeriodLabel('');
+    }
+  }, [compare, timePeriod, startDate, endDate, language]);
+  
+  // Reformat input display values when language changes
+  useEffect(() => {
+      const reformatInputs = (metrics: CampaignMetrics, setter: React.Dispatch<React.SetStateAction<typeof initialMetricsInput>>) => {
+          setter({
+              impressions: formatNumberForDisplay(metrics.impressions, language, 'impressions'),
+              clicks: formatNumberForDisplay(metrics.clicks, language, 'clicks'),
+              conversions: formatNumberForDisplay(metrics.conversions, language, 'conversions'),
+              cost: formatNumberForDisplay(metrics.cost, language, 'cost'),
+          });
+      };
+      reformatInputs(currentMetrics, setCurrentMetricsInput);
+      if (compare) {
+          reformatInputs(previousMetrics, setPreviousMetricsInput);
+      }
+  }, [language]);
+
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, period: 'current' | 'previous') => {
+      const { name, value } = e.target;
+      const key = name as keyof CampaignMetrics;
+
+      // Update the string state that is directly bound to the input field
+      const stringSetter = period === 'current' ? setCurrentMetricsInput : setPreviousMetricsInput;
+      stringSetter(prev => ({ ...prev, [key]: value }));
+
+      // Parse the input string to a number and update the numeric state used for calculations
+      const parsedValue = parseLocaleNumber(value, language);
+      const numberSetter = period === 'current' ? setCurrentMetrics : setPreviousMetrics;
+      numberSetter(prev => ({ ...prev, [key]: parsedValue >= 0 ? parsedValue : 0 }));
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>, period: 'current' | 'previous') => {
+      const { name } = e.target;
+      const key = name as keyof CampaignMetrics;
+      
+      // Get the true numeric value from the number state
+      const metrics = period === 'current' ? currentMetrics : previousMetrics;
+      const numericValue = metrics[key];
+
+      // Format it for display and update the string state
+      const formattedValue = formatNumberForDisplay(numericValue, language, key);
+      const stringSetter = period === 'current' ? setCurrentMetricsInput : setPreviousMetricsInput;
+      stringSetter(prev => ({ ...prev, [key]: formattedValue }));
+  };
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Validate current metrics
-    if (Object.values(currentMetrics).some(v => typeof v === 'number' && v < 0)) {
-        alert(getText(language, 'ALERT_METRICS_NEGATIVE'));
-        return;
-    }
-    if (currentMetrics.clicks > currentMetrics.impressions) {
-        alert(getText(language, 'ALERT_CLICKS_GT_IMPRESSIONS'));
-        return;
+
+    if (Object.keys(errors).length > 0) {
+      return; // Do not submit if there are validation errors
     }
     
     let submissionRequest: StructuredInsightRequest = {
@@ -51,19 +229,15 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
       currentMetrics,
     };
 
-    // Validate and include previous metrics if comparison is enabled
+    if (timePeriod === TimePeriod.CUSTOM) {
+      submissionRequest.startDate = startDate;
+      submissionRequest.endDate = endDate;
+    }
+
     if (compare) {
       const allPreviousFieldsZero = Object.values(previousMetrics).every(v => v === 0);
       if(allPreviousFieldsZero) {
-        alert(getText(language, 'ALERT_PREVIOUS_METRICS_INCOMPLETE'));
-        return;
-      }
-      if (Object.values(previousMetrics).some(v => typeof v === 'number' && v < 0)) {
-        alert(getText(language, 'ALERT_METRICS_NEGATIVE'));
-        return;
-      }
-      if (previousMetrics.clicks > previousMetrics.impressions) {
-        alert(getText(language, 'ALERT_CLICKS_GT_IMPRESSIONS'));
+        setErrors(prev => ({...prev, previousPeriod: getText(language, 'ALERT_PREVIOUS_METRICS_INCOMPLETE')}));
         return;
       }
       submissionRequest.previousMetrics = previousMetrics;
@@ -76,39 +250,75 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
     { name: 'impressions', labelKey: 'LABEL_IMPRESSIONS', placeholder: 'e.g., 100000' },
     { name: 'clicks', labelKey: 'LABEL_CLICKS', placeholder: 'e.g., 2000' },
     { name: 'conversions', labelKey: 'LABEL_CONVERSIONS', placeholder: 'e.g., 100' },
-    { name: 'cost', labelKey: 'LABEL_COST', placeholder: 'e.g., 500.00' },
+    { name: 'cost', labelKey: 'LABEL_COST', placeholder: language === Language.ES ? 'e.g., 500,00' : 'e.g., 500.00' },
   ];
   
   const labelStyle = { fontFamily: "'Montserrat', sans-serif", fontWeight: 500 };
 
   const renderMetricFields = (period: 'current' | 'previous') => {
-    const metrics = period === 'current' ? currentMetrics : previousMetrics;
+    const metricsInput = period === 'current' ? currentMetricsInput : previousMetricsInput;
+    const periodErrors = Object.keys(errors)
+      .filter(key => key.startsWith(period))
+      .reduce((obj, key) => {
+        obj[key.replace(period, '').toLowerCase()] = errors[key];
+        return obj;
+      }, {} as {[key: string]: string});
+
     return (
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
         {metricInputFields.map(field => (
           <div key={`${period}-${field.name}`}>
             <label htmlFor={`${period}-${field.name}`} className="block text-xs font-medium text-[#6D7475] mb-1">
               {getText(language, field.labelKey)}
             </label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id={`${period}-${field.name}`}
               name={field.name}
-              value={metrics[field.name] === 0 && document.activeElement?.id !== `${period}-${field.name}` ? '' : metrics[field.name]}
-              onChange={(e) => handleMetricChange(e, period)}
+              value={metricsInput[field.name]}
+              onChange={(e) => handleInputChange(e, period)}
+              onBlur={(e) => handleBlur(e, period)}
               onFocus={(e) => e.target.select()}
               placeholder={field.placeholder} 
-              min="0"
-              step={field.name === 'cost' ? "0.01" : "1"}
-              className="w-full p-3 bg-white border border-[#ACB4B6] rounded-md shadow-sm focus:ring-[#F54963] focus:border-[#F54963] text-[#0A263B] placeholder-[#878E90] text-sm"
+              className={`w-full p-2 bg-white border rounded-md shadow-sm focus:ring-[#F54963] focus:border-[#F54963] text-[#0A263B] placeholder-[#878E90] text-sm ${periodErrors[field.name.toLowerCase()] ? 'border-red-500' : 'border-[#ACB4B6]'}`}
               disabled={isLoading}
-              required
             />
           </div>
         ))}
+         {Object.values(periodErrors).length > 0 && <p className="col-span-2 text-xs text-red-600 mt-1">{Object.values(periodErrors)[0]}</p>}
       </div>
     );
   }
+
+  const renderCalculatedMetrics = (calculated: CalculatedMetrics, baseMetrics: CampaignMetrics, compareCalculated?: CalculatedMetrics) => {
+    const locale = language === 'es' ? 'es-ES' : 'en-US';
+    const formatCurrency = (value: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(value);
+    const formatPercent = (value: number) => `${(value * 100).toFixed(2).replace('.', ',')}%`; // Always use comma for percent in this UI display
+
+    const metrics = [
+        { label: 'CTR', value: formatPercent(calculated.ctr), compareValue: compareCalculated?.ctr, isPositiveGood: true },
+        { label: 'CPC', value: formatCurrency(calculated.cpc), compareValue: compareCalculated?.cpc, isPositiveGood: false },
+        { label: 'CPA', value: formatCurrency(calculated.cpa), compareValue: compareCalculated?.cpa, isPositiveGood: false },
+        { label: 'CVR', value: formatPercent(calculated.cvr), compareValue: compareCalculated?.cvr, isPositiveGood: true },
+    ];
+
+    return (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-3">
+            {metrics.map(metric => (
+                <div key={metric.label} className="text-xs">
+                    <span className="font-semibold text-gray-600">{metric.label}:</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-mono text-gray-800">{metric.value}</span>
+                      {compareCalculated && typeof metric.compareValue === 'number' && (
+                          <TrendIndicator change={(calculated[metric.label.toLowerCase() as keyof CalculatedMetrics] / metric.compareValue) - 1} isPositiveGood={metric.isPositiveGood} />
+                      )}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 text-[#0A263B]">
@@ -142,53 +352,84 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
             disabled={isLoading}
             className="w-full p-3 bg-white border border-[#ACB4B6] rounded-md shadow-sm focus:ring-[#F54963] focus:border-[#F54963] text-[#0A263B] text-sm"
             >
-            {Object.values(TimePeriod).map(tpValue => (
-                <option key={tpValue} value={tpValue}>{getTimePeriodLabel(language, tpValue as TimePeriod)}</option>
+            {timePeriodOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
             </select>
         </div>
       </div>
 
-      <fieldset className="space-y-4 p-4 border border-gray-200 rounded-lg">
-        <legend className="text-md font-medium text-[#0A263B] px-2" style={labelStyle}>
-            {getText(language, 'SECTION_TITLE_CURRENT_PERIOD')}
-        </legend>
-        {renderMetricFields('current')}
-      </fieldset>
-
-      <div className="relative flex items-start">
-        <div className="flex h-6 items-center">
-          <input
-            id="compare-period"
-            aria-describedby="compare-period-description"
-            name="compare-period"
-            type="checkbox"
-            checked={compare}
-            onChange={(e) => setCompare(e.target.checked)}
-            disabled={isLoading}
-            className="h-4 w-4 rounded border-gray-300 text-[#F54963] focus:ring-[#F54963]"
-          />
+       {timePeriod === TimePeriod.CUSTOM && (
+        <div className="p-3 border border-gray-200 rounded-lg bg-gray-50/70">
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label htmlFor="start-date" className="block text-xs font-medium text-[#6D7475] mb-1">
+                        {language === Language.ES ? 'Fecha de Inicio' : 'Start Date'}
+                    </label>
+                    <input type="date" id="start-date" value={startDate} onChange={e => setStartDate(e.target.value)} disabled={isLoading} max={endDate} className="w-full p-2 bg-white border border-[#ACB4B6] rounded-md shadow-sm text-sm" />
+                </div>
+                 <div>
+                    <label htmlFor="end-date" className="block text-xs font-medium text-[#6D7475] mb-1">
+                        {language === Language.ES ? 'Fecha de Fin' : 'End Date'}
+                    </label>
+                    <input type="date" id="end-date" value={endDate} onChange={e => setEndDate(e.target.value)} disabled={isLoading} min={startDate} className="w-full p-2 bg-white border border-[#ACB4B6] rounded-md shadow-sm text-sm" />
+                </div>
+            </div>
+            {errors.dateRange && <p className="text-xs text-red-600 mt-2">{errors.dateRange}</p>}
         </div>
-        <div className="ml-3 text-sm leading-6">
-          <label htmlFor="compare-period" className="font-medium text-gray-900" style={labelStyle}>
-            {getText(language, 'LABEL_COMPARE_PERIOD')}
-          </label>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <fieldset className="space-y-2 p-3 border border-gray-200 rounded-lg">
+            <legend className="text-md font-medium text-[#0A263B] px-2 text-sm" style={labelStyle}>
+                {getText(language, 'SECTION_TITLE_CURRENT_PERIOD')}
+            </legend>
+            {renderMetricFields('current')}
+            <div className="pt-2 border-t border-gray-200/60">
+              {renderCalculatedMetrics(currentCalculated, currentMetrics, compare ? previousCalculated : undefined)}
+            </div>
+        </fieldset>
+
+        <div>
+            <div className="relative flex items-start mb-4">
+                <div className="flex h-6 items-center">
+                <input
+                    id="compare-period"
+                    name="compare-period"
+                    type="checkbox"
+                    checked={compare}
+                    onChange={(e) => setCompare(e.target.checked)}
+                    disabled={isLoading}
+                    className="h-4 w-4 rounded border-gray-300 text-[#F54963] focus:ring-[#F54963]"
+                />
+                </div>
+                <div className="ml-3 text-sm leading-6">
+                <label htmlFor="compare-period" className="font-medium text-gray-900" style={{...labelStyle, fontSize: '0.9rem'}}>
+                    {getText(language, 'LABEL_COMPARE_PERIOD')}
+                </label>
+                {comparisonPeriodLabel && <span className="ml-2 text-xs text-gray-500">{comparisonPeriodLabel}</span>}
+                </div>
+            </div>
+            
+            {compare && (
+                <fieldset className="space-y-2 p-3 border border-gray-200 rounded-lg bg-gray-50/70 transition-opacity duration-300">
+                    <legend className="text-md font-medium text-[#0A263B] px-2 text-sm" style={labelStyle}>
+                        {getText(language, 'SECTION_TITLE_PREVIOUS_PERIOD')}
+                    </legend>
+                    {renderMetricFields('previous')}
+                     <div className="pt-2 border-t border-gray-200/60">
+                        {renderCalculatedMetrics(previousCalculated, previousMetrics)}
+                    </div>
+                    {errors.previousPeriod && <p className="text-xs text-red-600 mt-1">{errors.previousPeriod}</p>}
+                </fieldset>
+            )}
         </div>
       </div>
-      
-      {compare && (
-        <fieldset className="space-y-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
-            <legend className="text-md font-medium text-[#0A263B] px-2" style={labelStyle}>
-                {getText(language, 'SECTION_TITLE_PREVIOUS_PERIOD')}
-            </legend>
-            {renderMetricFields('previous')}
-        </fieldset>
-      )}
 
 
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={isLoading || Object.keys(errors).length > 0}
         className="w-full flex justify-center items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#F54963] hover:bg-[#D93E52] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-[#F54963] disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 ease-in-out"
         style={{fontFamily: "'Montserrat', sans-serif", fontWeight: 600}}
       >
