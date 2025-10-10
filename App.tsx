@@ -1,5 +1,4 @@
 
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { DataInputForm } from './components/DataInputForm.tsx';
 import { StructuredDataInputForm } from './components/StructuredDataInputForm.tsx';
@@ -337,8 +336,10 @@ const App: React.FC = () => {
             </div>
         </main>
         
-        <HelpBotButton language={selectedLanguage} onClick={openHelpModal} />
-        <FeedbackButton language={selectedLanguage} />
+        <div className="fixed bottom-4 left-4 z-50 flex flex-col space-y-2 lg:absolute lg:top-1/2 lg:-translate-y-1/2 lg:left-auto lg:right-full lg:mr-4 lg:bottom-auto">
+          <FeedbackButton language={selectedLanguage} />
+          <HelpBotButton language={selectedLanguage} onClick={openHelpModal} />
+        </div>
       </div>
 
 

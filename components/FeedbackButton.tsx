@@ -31,7 +31,7 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({ language }) => {
     <button
       type="button"
       onClick={handleFeedbackClick}
-      className="fixed bottom-4 right-4 z-50 p-3 bg-[#F54963] text-white rounded-full shadow-lg hover:bg-[#D93E52] focus:outline-none focus:ring-2 focus:ring-[#36A7B7] focus:ring-offset-2 focus:ring-offset-white transition-colors duration-150 lg:absolute lg:top-1/2 lg:-translate-y-1/2 lg:right-auto lg:left-full lg:ml-4 lg:bottom-auto"
+      className="p-3 bg-[#F54963] text-white rounded-full shadow-lg hover:bg-[#D93E52] focus:outline-none focus:ring-2 focus:ring-[#36A7B7] focus:ring-offset-2 focus:ring-offset-white transition-colors duration-150"
       title={getText(language, 'BUTTON_FEEDBACK_TOOLTIP')}
       aria-label={getText(language, 'BUTTON_FEEDBACK_TOOLTIP')}
     >
