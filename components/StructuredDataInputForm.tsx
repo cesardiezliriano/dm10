@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { StructuredCampaignPlatform, TimePeriod, CampaignMetrics, StructuredInsightRequest, Language, UIStringKeys } from '../types.ts'; 
 import { STRUCTURED_PLATFORM_OPTIONS, getTimePeriodOptions, getText } from '../constants.ts'; 
@@ -150,21 +149,35 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
 
   useEffect(() => {
     if (compare && timePeriod === TimePeriod.CUSTOM && startDate && endDate) {
-      const start = new Date(startDate + 'T00:00:00Z');
-      const end = new Date(endDate + 'T00:00:00Z');
-      const duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      try {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
 
-      const prevEnd = new Date(start);
-      prevEnd.setUTCDate(prevEnd.getUTCDate() - 1);
-      
-      const prevStart = new Date(prevEnd);
-      prevStart.setUTCDate(prevStart.getUTCDate() - duration);
+        // Calculate duration in days (inclusive). Using UTC methods avoids DST issues.
+        const durationMs = end.getTime() - start.getTime();
+        const durationDays = Math.round(durationMs / (1000 * 60 * 60 * 24)) + 1;
+        
+        if (durationDays <= 0) {
+            setComparisonPeriodLabel('');
+            return;
+        }
 
-      const locale = language === Language.ES ? 'es-ES' : 'en-US';
-      const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' };
-      
-      const label = `(${language === Language.ES ? 'Compara con:' : 'Compares to:'} ${prevStart.toLocaleDateString(locale, options)} - ${prevEnd.toLocaleDateString(locale, options)})`;
-      setComparisonPeriodLabel(label);
+        // Calculate previous period.
+        const prevEnd = new Date(start);
+        prevEnd.setUTCDate(start.getUTCDate() - 1);
+
+        const prevStart = new Date(prevEnd);
+        prevStart.setUTCDate(prevEnd.getUTCDate() - (durationDays - 1));
+        
+        const locale = language === Language.ES ? 'es-ES' : 'en-US';
+        const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' };
+        
+        const label = `(${language === Language.ES ? 'Compara con:' : 'Compares to:'} ${prevStart.toLocaleDateString(locale, options)} - ${prevEnd.toLocaleDateString(locale, options)})`;
+        setComparisonPeriodLabel(label);
+      } catch (e) {
+        console.error("Error calculating comparison period:", e);
+        setComparisonPeriodLabel(''); // Clear label on error
+      }
     } else {
       setComparisonPeriodLabel('');
     }

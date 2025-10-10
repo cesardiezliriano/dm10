@@ -3,7 +3,7 @@
 Generate data-driven insights and presentations with AI. This powerful tool leverages the Google Gemini API to transform complex marketing, sales, or operational data into clear, actionable textual analysis and professional PowerPoint presentations.
 
 [![Powered by Gemini](https://img.shields.io/badge/Powered%20by-Gemini%20API-blue.svg)](https://ai.google.dev/)
-[![React](https://img.shields.io/badge/React-19-blue.svg?logo=react)](https://react.dev/)
+[![React](https://img.shields.io/badge/React-18-blue.svg?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3-blue.svg?logo=tailwind-css)](https://tailwindcss.com/)
 
@@ -56,7 +56,7 @@ The application follows a sophisticated, multi-step process to deliver high-qual
 
 ## Tech Stack
 
--   **Frontend**: React 19, TypeScript, Tailwind CSS
+-   **Frontend**: React 18, TypeScript, Tailwind CSS
 -   **AI Model**: Google Gemini (`@google/genai` library)
 -   **Presentation Generation**: `pptxgenjs`
 -   **Data Handling**: `xlsx` (for Excel files), `marked` (for Markdown rendering)

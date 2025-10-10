@@ -1,5 +1,3 @@
-
-
 import { DataSource, StructuredCampaignPlatform, TimePeriod, Language, SlideType, KpiItem, PresentationData, SlideContent, KpiHighlightSection, BrandStyle, MotortecReportContent, HelpTopic, UIStringKeys, CampaignMetrics } from './types.ts';
 
 // --- Critical App Configuration ---
@@ -369,7 +367,7 @@ const UI_STRINGS: Record<UIStringKeys, Record<Language, string> | Partial<Record
   },
   HELP_TOPIC_DATA_INPUT_TIPS_ANSWER: {
     [Language.EN]: "For the best results in **Aggregated Data Analysis**:\n\n1.  **Be Clear**: If pasting data from multiple sources (e.g., Google Ads and Meta Ads), label each section clearly. Example:\n    `=== Google Ads - Last 30 Days ===\n    Spend: $1000, Clicks: 2000, Conversions: 50\n\n    === Meta Ads - Last 30 Days ===\n    Spend: $800, Impressions: 100000, Leads: 30`\n2.  **Context is Key**: Use the optional fields (Client Name, Sector, Market, Additional Context) to give the AI more background. This helps generate more relevant insights.\n3.  **Summarized Data**: Provide summarized data (e.g., total spend, average CPC) rather than raw, row-level data dumps.\n4.  **Excel Files**: If using Excel, ensure data is on the first sheet in a clear tabular format. The content will be appended to the text area.\n5.  **Specific Questions**: Use the 'Specific Questions' field to guide the AI if you have particular areas of interest (e.g., \"Why did our CPA increase this month?\").\n6.  **Creatives**: Upload up to 5 images for visual analysis. The AI will comment on their visual elements and potential effectiveness.",
-    [Language.ES]: "Para obtener los mejores resultados en el **Análisis de Datos Agregados**:\n\n1.  **Sé Claro/a**: Si pegas datos de múltiples fuentes (ej., Google Ads y Meta Ads), etiqueta cada sección claramente. Ejemplo:\n    `=== Google Ads - Últimos 30 Días ===\n    Gasto: $1000, Clics: 2000, Conversiones: 50\n\n    === Meta Ads - Últimos 30 Días ===\n    Gasto: $800, Impresiones: 100000, Leads: 30`\n2.  **El Contexto es Clave**: Utiliza los campos opcionales (Nombre del Cliente, Sector, Mercado, Contexto Adicional) para dar más trasfondo a la IA. Esto ayuda a generar insights más relevantes.\n3.  **Datos Resumidos**: Proporciona datos resumidos (ej., gasto total, CPC promedio) en lugar de volcados de datos brutos a nivel de fila.\n4.  **Archivos Excel**: Si usas Excel, asegúrate de que los datos estén en la primera hoja en un formato tabular claro. El contenido se añadirá al área de texto.\n5.  **Preguntas Específicas**: Usa el campo 'Preguntas Específicas' para guiar a la IA si tienes áreas particulares de interés (ej., \"¿Por qué aumentó nuestro CPA este mes?\").\n6.  **Creatividades**: Sube hasta 5 imágenes para análisis visual. La IA comentará sobre sus elementos visuais y su posible efectividad."
+    [Language.ES]: "Para obtener los mejores resultados en el **Análisis de Datos Agregados**:\n\n1.  **Sé Claro/a**: Si pegas datos de múltiples fuentes (ej., de Google Ads y Meta Ads), etiqueta cada sección claramente. Ejemplo:\n    `=== Google Ads - Últimos 30 Días ===\n    Gasto: $1000, Clics: 2000, Conversiones: 50\n\n    === Meta Ads - Últimos 30 Días ===\n    Gasto: $800, Impresiones: 100000, Leads: 30`\n2.  **El Contexto es Clave**: Utiliza los campos opcionales (Nombre del Cliente, Sector, Mercado, Contexto Adicional) para dar más trasfondo a la IA. Esto ayuda a generar insights más relevantes.\n3.  **Datos Resumidos**: Proporciona datos resumidos (ej., gasto total, CPC promedio) en lugar de volcados de datos brutos a nivel de fila.\n4.  **Archivos Excel**: Si usas Excel, asegúrate de que los datos estén en la primera hoja en un formato tabular claro. El contenido se añadirá al área de texto.\n5.  **Preguntas Específicas**: Usa el campo 'Preguntas Específicas' para guiar a la IA si tienes áreas particulares de interés (ej., \"¿Por qué aumentó nuestro CPA este mes?\").\n6.  **Creatividades**: Sube hasta 5 imágenes para análisis visual. La IA comentará sobre sus elementos visuais y su posible efectividad."
   },
   HELP_TOPIC_UNDERSTANDING_INSIGHTS_QUESTION: {
     [Language.EN]: "How do I interpret the generated insights?",
@@ -520,50 +518,104 @@ export const getTimePeriodLabel = (lang: Language, period: TimePeriod, startDate
 const generateComparisonPromptPart = (previousMetrics?: CampaignMetrics): string => {
     if (!previousMetrics) return '';
     return `
-**Datos del periodo anterior:**
-- Impresiones: ${previousMetrics.impressions}
-- Clics: ${previousMetrics.clicks}
-- Conversiones: ${previousMetrics.conversions}
-- Costo: ${previousMetrics.cost}
-
-**Análisis Comparativo vs. Periodo Anterior (CRÍTICO):**
-- **Calcula y muestra el cambio porcentual** para cada métrica clave (Impresiones, Clics, Conversiones, Costo) y para los KPIs derivados (CTR, CPC, CPA). Usa flechas (↑ o ↓) para indicar la dirección del cambio. En una tabla si es posible.
-- **Analiza la tendencia de rendimiento:** ¿Hemos mejorado o empeorado? ¿En qué áreas específicamente?
-- **Interpreta las razones de los cambios:** Ofrece hipótesis claras sobre por qué el rendimiento cambió. ¿Se debe a una variación en el CTR, un aumento del CPC, o una fluctuación en la tasa de conversión?
-- **Recomendaciones basadas en la comparación:** Si el rendimiento mejoró, ¿cómo podemos capitalizarlo y replicar el éxito? Si empeoró, ¿qué acciones correctivas inmediatas sugieres para optimizar la campaña?`;
+- **Métricas del Periodo Anterior:**
+  - Impresiones: ${previousMetrics.impressions}
+  - Clics: ${previousMetrics.clicks}
+  - Conversiones: ${previousMetrics.conversions}
+  - Costo: ${previousMetrics.cost}`;
 };
 
-const generateBasePrompt = (platformName: string, timePeriodLabel: string, currentMetrics: CampaignMetrics, previousMetrics?: CampaignMetrics) => {
-    const comparisonPrompt = generateComparisonPromptPart(previousMetrics);
-    return `Actúa como un analista experto en ${platformName} y consultor de negocio. Elabora un resumen conciso y profesional del rendimiento de la campaña para el periodo de ${timePeriodLabel}, enfocado en el impacto para el negocio y las acciones clave.
+const getMetricNames = (language: Language) => {
+    const isEs = language === Language.ES;
+    return {
+        impressions: isEs ? "Impresiones" : "Impressions",
+        clicks: isEs ? "Clics" : "Clicks",
+        conversions: isEs ? "Conversiones" : "Conversions",
+        cost: isEs ? "Costo" : "Cost",
+        ctr: isEs ? "CTR (Tasa de Clics)" : "CTR (Click-Through Rate)",
+        cpc: isEs ? "CPC (Costo por Clic)" : "CPC (Cost Per Click)",
+        cpa: isEs ? "CPA (Costo por Adquisición)" : "CPA (Cost Per Acquisition)",
+        cvr: isEs ? "CVR (Tasa de Conversión)" : "CVR (Conversion Rate)",
+        strategicConclusions: isEs ? "Conclusiones Estratégicas" : "Strategic Conclusions",
+    };
+};
 
-**Datos del periodo actual:**
-- Impresiones: ${currentMetrics.impressions}
-- Clics: ${currentMetrics.clicks}
-- Conversiones: ${currentMetrics.conversions}
-- Costo: ${currentMetrics.cost}
+const getColumnNames = (language: Language) => {
+    const isEs = language === Language.ES;
+    return {
+        metric: isEs ? "Métrica" : "Metric",
+        current: isEs ? "Periodo Actual" : "Current Period",
+        previous: isEs ? "Periodo Anterior" : "Previous Period",
+        change: isEs ? "Cambio %" : "Change %"
+    };
+};
+
+const generateBasePrompt = (platformName: string, timePeriodLabel: string, currentMetrics: CampaignMetrics, previousMetrics: CampaignMetrics | undefined, language: Language) => {
+    const comparisonPrompt = generateComparisonPromptPart(previousMetrics);
+    const metricNames = getMetricNames(language);
+    const columnNames = getColumnNames(language);
+    const languageText = language === Language.ES ? 'Español' : 'English';
+    const languageInstruction = `La respuesta final debe estar íntegramente en ${languageText}.`;
+
+    const requiredRows = [
+        metricNames.impressions,
+        metricNames.clicks,
+        metricNames.conversions,
+        metricNames.cost,
+        metricNames.ctr,
+        metricNames.cpc,
+        metricNames.cpa,
+        metricNames.cvr
+    ].join(', ');
+
+    let requiredColumns = `"${columnNames.metric}", "${columnNames.current}"`;
+    if (previousMetrics) {
+        requiredColumns += `, "${columnNames.previous}", "${columnNames.change}"`;
+    }
+    
+    return `
+**TU ROL:** Eres un Director Senior de Marketing Digital y Paid Media con más de 10 años de experiencia. Tu visión es estratégica y estás enfocado en resultados de negocio. Analiza los siguientes datos de campaña y proporciona un resumen ejecutivo para un cliente. Tu tono debe ser experto, claro y directo.
+
+**DATOS A ANALIZAR:**
+- **Plataforma:** ${platformName}
+- **Periodo:** ${timePeriodLabel}
+- **Métricas del Periodo Actual:**
+  - Impresiones: ${currentMetrics.impressions}
+  - Clics: ${currentMetrics.clicks}
+  - Conversiones: ${currentMetrics.conversions}
+  - Costo: ${currentMetrics.cost}
 ${comparisonPrompt}
 
-Por favor, estructura tu respuesta claramente con los siguientes apartados:
-1.  **Título Principal**: Un título claro para el resumen (ej: "Análisis de Campaña ${platformName}: ${timePeriodLabel}").
-2.  **Métricas Clave (KPIs)**: Lista las métricas base y deriva otras importantes como CTR, CPC, CPA para el periodo actual. Si hay comparación, muestra los KPIs de ambos periodos lado a lado con el cambio porcentual en una tabla.
-3.  **Análisis del Rendimiento**: Describe las observaciones más importantes sobre el rendimiento. ¿Qué funcionó bien? ¿Qué podría mejorar? Si hay comparación, centra el análisis en la *evolución* del rendimiento.
-4.  **Conclusiones Destacadas y Recomendaciones Concretas**: Un breve párrafo con las conclusiones más importantes y recomendaciones específicas y accionables, priorizadas según el análisis comparativo si existe.
+---
 
-**Instrucciones de formato y tono (CRÍTICO):**
-- Utiliza encabezados claros para cada sección (ej: "# Título", "## Subtítulo").
-- Usa viñetas cortas, claras y directas para facilitar la lectura. Evita frases técnicas innecesarias; simplifica el lenguaje.
-- **Resalta las conclusiones, logros clave, caídas significativas y observaciones más cruciales en negrita (usando Markdown: **texto en negrita**).**
-- Mantén un tono de consultor experto, no de una máquina que simplemente analiza una campaña. Enfatiza los logros de forma clara y sé muy concreto en tus recomendaciones. Elimina repeticiones.`;
+**INSTRUCCIONES DE SALIDA (OBLIGATORIO):**
+Tu respuesta DEBE seguir este formato de dos partes, en este orden exacto y sin ningún otro texto introductorio o de cierre.
+**REQUISITO DE IDIOMA:** ${languageInstruction}
+
+**PARTE 1: Tabla de KPIs de Rendimiento**
+Genera una tabla en formato Markdown. **No añadas ningún texto antes de la tabla.**
+- **Columnas Requeridas:** ${requiredColumns}.
+- **Filas Requeridas:** La primera columna ('${columnNames.metric}') debe contener, en orden, los siguientes nombres de métricas: ${requiredRows}.
+- Rellena los datos para las métricas proporcionadas (Impresiones, Clics, Conversiones, Costo).
+- **Calcula y rellena** los datos para las métricas derivadas (CTR, CPC, CPA, CVR).
+- Si hay datos de comparación, calcula el "Cambio %" para TODAS las filas.
+
+**PARTE 2: Conclusiones Estratégicas**
+Después de la tabla, **DEJA UNA LÍNEA EN BLANCO** y luego, en la siguiente línea, añade el encabezado \`## ${metricNames.strategicConclusions}\`. Este espaciado es crucial para el formato correcto.
+Bajo este encabezado, proporciona tu análisis experto en 3 a 5 viñetas (bullet points).
+- **Interpreta los datos, no los repitas.** Explica qué significan para el negocio.
+- Enfócate en la eficiencia de la inversión (CPC, CPA), la calidad del tráfico (CTR), el impacto en el negocio (Conversiones, CVR) y las tendencias.
+- **Usa negrita (**) para resaltar métricas y conclusiones clave.**
+`;
 };
 
 
 export const PROMPT_TEMPLATES = {
-  [StructuredCampaignPlatform.GOOGLE_ADS]: (timePeriodLabel: string, currentMetrics: CampaignMetrics, previousMetrics?: CampaignMetrics) => 
-    generateBasePrompt("Google Ads", timePeriodLabel, currentMetrics, previousMetrics),
+  [StructuredCampaignPlatform.GOOGLE_ADS]: (timePeriodLabel: string, currentMetrics: CampaignMetrics, previousMetrics: CampaignMetrics | undefined, language: Language) => 
+    generateBasePrompt("Google Ads", timePeriodLabel, currentMetrics, previousMetrics, language),
 
-  [StructuredCampaignPlatform.META_ADS]: (timePeriodLabel: string, currentMetrics: CampaignMetrics, previousMetrics?: CampaignMetrics) =>
-    generateBasePrompt("Meta Ads", timePeriodLabel, currentMetrics, previousMetrics)
+  [StructuredCampaignPlatform.META_ADS]: (timePeriodLabel: string, currentMetrics: CampaignMetrics, previousMetrics: CampaignMetrics | undefined, language: Language) =>
+    generateBasePrompt("Meta Ads", timePeriodLabel, currentMetrics, previousMetrics, language)
 };
 
 const getMotortecTemplateExampleJson = (language: Language, clientName: string, brandStyle: BrandStyle): MotortecReportContent => {

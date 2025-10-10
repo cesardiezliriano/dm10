@@ -1,7 +1,5 @@
-
-
 import React, { useMemo, useState, useEffect } from 'react';
-import { marked, Renderer, Tokens } from 'marked'; 
+import { marked, Renderer } from 'marked'; 
 import { GroundingChunk, Language } from '../types.ts'; 
 import { getText } from '../constants.ts'; 
 import { ErrorMessage } from './ErrorMessage.tsx'; 
@@ -19,7 +17,7 @@ interface InsightDisplayProps {
 
 // Simple manual slugify function as a fallback
 const manualSlugify = (textInput: any): string => {
-  const text = String(textInput || '');
+  const text = String(textInput || '').replace(/<[^>]+>/g, ''); // Strip any inner HTML before slugifying
   return text
     .toLowerCase()
     .trim()
@@ -39,105 +37,50 @@ const escapeHtml = (unsafe: string): string => {
 };
 
 const createCustomLlycRenderer = (): Renderer => {
-    const customRenderer = new Renderer();
+    const renderer = new Renderer();
 
-    customRenderer.heading = function(this: Renderer, token: Tokens.Heading): string {
-      const originalText = token.text === undefined ? '' : token.text;
-      let textContent = originalText; 
-      const id = manualSlugify(originalText); 
-
-      if (this.parser && typeof this.parser.parseInline === 'function' && token.tokens && token.tokens.length > 0) {
-        try {
-          const parsed = this.parser.parseInline(token.tokens);
-          if (typeof parsed === 'string') textContent = parsed;
-        } catch (e) {
-          console.warn("Markdown Renderer (heading): Error using this.parser.parseInline, falling back to originalText. Error:", e, "Raw token:", token.raw);
-        }
-      }
+    renderer.heading = (text: string, level: number): string => {
+      const id = manualSlugify(text);
+      const levelClasses = {
+        1: 'text-xl font-bold',
+        2: 'text-lg font-semibold',
+        3: 'text-md font-semibold',
+      }[level] || 'text-md font-semibold';
       
-      return `
-              <h${token.depth} id="${id}" class="font-montserrat text-llyc-azul-oscuro mt-4 mb-2 ${token.depth === 1 ? 'text-xl font-bold' : token.depth === 2 ? 'text-lg font-semibold' : 'text-md font-semibold'}">
-                ${textContent}
-              </h${token.depth}>`;
+      return `<h${level} id="${id}" class="font-montserrat text-llyc-azul-oscuro mt-4 mb-2 ${levelClasses}">${text}</h${level}>`;
     };
 
-    customRenderer.strong = function(this: Renderer, token: Tokens.Strong): string {
-      let textContent = token.text === undefined ? '' : token.text; 
-       if (this.parser && typeof this.parser.parseInline === 'function' && token.tokens && token.tokens.length > 0) {
-        try {
-          const parsed = this.parser.parseInline(token.tokens);
-          if (typeof parsed === 'string') textContent = parsed;
-        } catch (e) {
-          console.warn("Markdown Renderer (strong): Error using this.parser.parseInline, falling back to token.text. Error:", e, "Raw token:", token.raw);
-        }
-      }
-      return `<strong class="text-llyc-azul-oscuro font-semibold">${textContent}</strong>`;
+    renderer.strong = (text: string): string => {
+      return `<strong class="text-llyc-azul-oscuro font-semibold">${text}</strong>`;
     };
     
-    customRenderer.link = function(this: Renderer, token: Tokens.Link): string {
-      let textContent = token.text === undefined ? '' : token.text; 
-      if (this.parser && typeof this.parser.parseInline === 'function' && token.tokens && token.tokens.length > 0) {
-        try {
-          const parsed = this.parser.parseInline(token.tokens);
-          if (typeof parsed === 'string') textContent = parsed;
-        } catch (e) {
-          console.warn("Markdown Renderer (link): Error using this.parser.parseInline, falling back to token.text. Error:", e, "Raw token:", token.raw);
-        }
-      }
-      return `<a href="${token.href || ''}" title="${token.title || ''}" target="_blank" rel="noopener noreferrer" class="text-llyc-red hover:text-llyc-red-dark underline">${textContent}</a>`;
+    renderer.link = (href: string | null, title: string | null, text: string): string => {
+      return `<a href="${href || ''}" title="${title || ''}" target="_blank" rel="noopener noreferrer" class="text-llyc-red hover:text-llyc-red-dark underline">${text}</a>`;
     };
 
-    customRenderer.listitem = function(this: Renderer, token: Tokens.ListItem): string {
-        let textContent = token.text === undefined ? '' : token.text;
-
-        if (this.parser && typeof this.parser.parseInline === 'function' && token.tokens && token.tokens.length > 0) {
-            try {
-                const parsed = this.parser.parseInline(token.tokens);
-                if (typeof parsed === 'string') {
-                    textContent = parsed;
-                } else {
-                    console.warn("Markdown Renderer (listitem): this.parser.parseInline did not return a string, using token.text as fallback. Returned:", parsed, "Raw token:", token.raw);
-                }
-            } catch(e) {
-                console.warn("Markdown Renderer (listitem): Error using this.parser.parseInline, falling back to token.text. Error:", e, "Raw token:", token.raw);
-            }
-        }
-        return `<li class="text-llyc-gris-01 ml-5 mb-1">${textContent}</li>`;
+    renderer.listitem = (text: string): string => {
+        // The parsed text for a list item often comes wrapped in a paragraph. 
+        // We strip it to avoid extra margins from our custom paragraph renderer inside the list.
+        const cleanedText = text.startsWith('<p>') && text.endsWith('</p>') ? text.slice(3, -4) : text;
+        return `<li class="font-open-sans text-sm text-[#6D7475] mb-1">${cleanedText}</li>`;
     };
     
-    customRenderer.list = function(this: Renderer, token: Tokens.List): string {
-      if (!token.items || !Array.isArray(token.items) || token.items.length === 0) {
-        console.warn("Markdown Renderer (list): token.items is undefined, not an array, or empty. Rendering empty list. Raw token:", token.raw);
-        return token.ordered ? "<ol class=\"list-decimal list-inside text-llyc-gris-01 space-y-1 my-2\"></ol>" : "<ul class=\"list-disc list-inside text-llyc-gris-01 space-y-1 my-2\"></ul>";
-      }
-
-      const body = token.items.map(item => this.listitem(item as Tokens.ListItem)).join('');
-      if (token.ordered) {
-        return `<ol class="list-decimal list-inside text-llyc-gris-01 space-y-1 my-2">${body}</ol>`;
-      }
-      return `<ul class="list-disc list-inside text-llyc-gris-01 space-y-1 my-2">${body}</ul>`;
+    renderer.list = (body: string, ordered: boolean): string => {
+      const tag = ordered ? 'ol' : 'ul';
+      const listStyle = ordered ? 'list-decimal' : 'list-disc';
+      return `<${tag} class="font-open-sans text-sm text-[#6D7475] ${listStyle} list-inside space-y-1 my-2 pl-4">${body}</${tag}>`;
     };
 
-    customRenderer.paragraph = function(this: Renderer, token: Tokens.Paragraph): string {
-      let textContent = token.text === undefined ? '' : token.text;
-
-      if (this.parser && typeof this.parser.parseInline === 'function' && token.tokens && token.tokens.length > 0) {
-        try {
-            const parsed = this.parser.parseInline(token.tokens);
-            if (typeof parsed === 'string') {
-                textContent = parsed;
-            } else {
-                console.warn("Markdown Renderer (paragraph): this.parser.parseInline did not return a string, using token.text as fallback. Returned:", parsed, "Raw token:", token.raw);
-            }
-        } catch(e) {
-            console.warn("Markdown Renderer (paragraph): Error using this.parser.parseInline, falling back to token.text. Error:", e, "Raw token:", token.raw);
-        }
+    renderer.paragraph = (text: string): string => {
+      // Avoid wrapping table content in paragraphs
+      if (text.includes('<table') || text.trim().startsWith('|')) {
+          return text;
       }
-      return `<p class="text-llyc-gris-01 mb-2 leading-relaxed">${textContent}</p>`
+      return `<p class="font-open-sans text-sm text-[#6D7475] mb-2 leading-relaxed">${text}</p>`
     }
 
     // Table rendering with LLYC styles
-    customRenderer.table = function(header: string, body: string): string {
+    renderer.table = function(header: string, body: string): string {
         return `
             <div class="overflow-x-auto my-4 custom-scrollbar rounded-md shadow-sm border border-[#ACB4B6]">
                 <table class="min-w-full border-collapse bg-white">
@@ -147,22 +90,19 @@ const createCustomLlycRenderer = (): Renderer => {
             </div>`;
     };
 
-    customRenderer.tablerow = function(content: string): string {
-        // The 'content' here is already a string of <td> or <th> elements.
-        // Adding hover effect to the row.
+    renderer.tablerow = function(content: string): string {
         return `<tr class="border-b border-[#ACB4B6] last:border-b-0 bg-white hover:bg-[#0A263B]/[0.03]">${content}</tr>`;
     };
 
-    customRenderer.tablecell = function(content: string, flags: { header: boolean; align: 'center' | 'left' | 'right' | null; }): string {
-        // 'content' is the already parsed inline content of the cell.
+    renderer.tablecell = function(content: string, flags: { header: boolean; align: 'center' | 'left' | 'right' | null; }): string {
         const alignClass = flags.align ? `text-${flags.align}` : 'text-left';
         if (flags.header) {
-            return `<th class="p-3 ${alignClass} font-montserrat font-semibold text-[#0A263B] bg-[#0A263B]/[0.07] border-r border-[#ACB4B6] last:border-r-0">${content}</th>`;
+            return `<th class="p-2 ${alignClass} text-sm font-montserrat font-semibold text-[#0A263B] bg-[#0A263B]/[0.07] border-r border-[#ACB4B6] last:border-r-0">${content}</th>`;
         }
-        return `<td class="p-3 ${alignClass} text-[#6D7475] font-open-sans border-r border-[#ACB4B6] last:border-r-0">${content}</td>`;
+        return `<td class="p-2 ${alignClass} text-sm text-[#6D7475] font-open-sans border-r border-[#ACB4B6] last:border-r-0">${content}</td>`;
     };
 
-    return customRenderer;
+    return renderer;
 };
 
 const llycMarkdownRenderer = createCustomLlycRenderer();
@@ -217,23 +157,44 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
   // STATE 2: Insight generation has been attempted (insight is now a string, possibly empty)
   const isEffectivelyEmpty = insight.trim() === '';
 
-  const processedInsightHtml = useMemo(() => {
-    if (isEffectivelyEmpty) return ''; // No need to process if it's effectively empty
-    try {
-        const html = marked.parse(insight, { renderer: llycMarkdownRenderer, gfm: true, breaks: true }) as string;
-        // Check if the HTML produced is just empty lists or similar empty structures.
-        // A simple check: if after stripping tags, it's empty, consider it visually empty for display purposes.
+  const insightPartsHtml = useMemo(() => {
+    if (isEffectivelyEmpty) return [];
+
+    let parts: string[] = [];
+
+    // The user's diagnosis is that the markdown parser fails when a table is immediately
+    // followed by the conclusions heading. This is specific to the 'structured' summary mode.
+    // By splitting the content and rendering each part separately, we avoid the parser bug.
+    if (currentMode === 'structured') {
+      const separatorRegex = /(?=##\s*(?:Conclusiones Estratégicas|Strategic Conclusions))/i;
+      const splitParts = insight.split(separatorRegex);
+      if (splitParts.length > 1) {
+        console.log("InsightDisplay: Splitting structured insight into table and conclusions for robust rendering.");
+        parts = splitParts.filter(p => p.trim() !== ''); // Filter out empty parts
+      } else {
+        parts = [insight]; // If split fails, treat as a single part
+      }
+    } else {
+      parts = [insight]; // For aggregated mode, treat the whole insight as a single part
+    }
+    
+    // Now, parse each part into HTML
+    return parts.map((part, index) => {
+      try {
+        const html = marked.parse(part, { renderer: llycMarkdownRenderer, gfm: true, breaks: true }) as string;
         if (html && html.replace(/<[^>]*>/g, '').trim() !== '') {
             return html;
         }
-        // If markdown results in visually empty HTML, but the original insight wasn't just whitespace,
-        // show the raw insight pre-formatted to ensure user sees something.
-        return `<pre style="white-space: pre-wrap; word-wrap: break-word; color: #0A263B; background-color: #f0f0f0; border: 1px solid #ccc; padding: 10px; font-family: 'Courier New', Courier, monospace; font-size: 0.875rem;">${escapeHtml(insight)}</pre>`;
-    } catch (error) {
-        console.error("[InsightDisplay useMemo] Error during marked.parse. Falling back to preformatted text. Error:", error, "Insight was:", `"${insight.substring(0,100)}..."`);
-        return `<pre style="white-space: pre-wrap; word-wrap: break-word; color: #B91C1C; background-color: #FEE2E2; border: 1px solid #FCA5A5; padding: 10px; font-family: 'Courier New', Courier, monospace; font-size: 0.875rem;">FALLBACK DUE TO ERROR:\n${escapeHtml(insight)}</pre>`;
-    }
-  }, [insight, isEffectivelyEmpty]);
+        // Fallback for parts that parse to empty strings
+        return `<pre style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(part)}</pre>`;
+      } catch (error) {
+        console.error(`[InsightDisplay useMemo] Error parsing markdown part ${index + 1}. Falling back.`, error);
+        return `<pre style="white-space: pre-wrap; word-wrap: break-word; color: #B91C1C;">FALLBACK DUE TO ERROR:\n${escapeHtml(part)}</pre>`;
+      }
+    });
+    
+  }, [insight, isEffectivelyEmpty, currentMode]);
+
 
   const handleCopyInsight = async () => {
     if (isEffectivelyEmpty) return; 
@@ -305,10 +266,14 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
                     <p className="text-sm">{getText(language, 'NO_SPECIFIC_INSIGHTS_GENERATED')}</p>
                 </div>
             ) : (
-                <div 
-                    className="prose prose-sm max-w-none prose-llyc pt-8" // pt-8 to clear buttons
-                    dangerouslySetInnerHTML={{ __html: processedInsightHtml }}
-                />
+                <div className="pt-8">
+                  {insightPartsHtml.map((htmlPart, index) => (
+                      <div
+                          key={index}
+                          dangerouslySetInnerHTML={{ __html: htmlPart }}
+                      />
+                  ))}
+                </div>
             )}
             
             {sources && sources.length > 0 && !isEffectivelyEmpty && ( // Also hide sources if effectively empty

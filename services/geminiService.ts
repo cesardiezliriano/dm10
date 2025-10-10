@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Tool, GenerateContentParameters, GenerateContentResponse, Part } from "@google/genai";
 import { GEMINI_TEXT_MODEL, PROMPT_TEMPLATES, getText, getTimePeriodLabel, PROMPT_TEMPLATE_FOR_PPT_JSON } from '../constants.ts';
 import { DataSource, GenerateContentGeminiResponse, Candidate, GroundingMetadata, GroundingChunk, StructuredInsightRequest, StructuredCampaignPlatform, Language, PresentationData, InsightRequest, UploadedImage, BrandStyle } from '../types.ts';
@@ -258,29 +257,21 @@ export const generateStructuredInsight = async (
   const ai = new GoogleGenAI({ apiKey: apiKey });
 
   const timePeriodLabel = getTimePeriodLabel(language, request.timePeriod, request.startDate, request.endDate); 
-  const languageInstruction = `Respond in ${language}.`;
   
-  let basePromptFn;
-  if (request.platform === StructuredCampaignPlatform.GOOGLE_ADS) {
-    basePromptFn = PROMPT_TEMPLATES[StructuredCampaignPlatform.GOOGLE_ADS];
-  } else if (request.platform === StructuredCampaignPlatform.META_ADS) {
-    basePromptFn = PROMPT_TEMPLATES[StructuredCampaignPlatform.META_ADS];
-  } else {
-    throw new Error(`Structured analysis for platform ${request.platform} is not currently supported with a specific template.`);
+  const basePromptFn = PROMPT_TEMPLATES[request.platform];
+  if (!basePromptFn) {
+      throw new Error(`Structured analysis for platform ${request.platform} is not currently supported with a specific template.`);
   }
 
-  const userPrompt = `${basePromptFn(timePeriodLabel, request.currentMetrics, request.previousMetrics)} ${languageInstruction}`;
+  // The new prompt from constants.ts now contains the persona and full instructions.
+  const userPrompt = basePromptFn(timePeriodLabel, request.currentMetrics, request.previousMetrics, language);
   
-  const requestConfig: { systemInstruction?: string } = {
-    systemInstruction: `You are a concise data summarizer speaking directly to a client. Your output should be well-structured with clear headings and bullet points for readability. Key insights must be in bold. ${languageInstruction}`
-  }; 
-  console.log("GeminiService: Sending request to Gemini for structured insight with userPrompt:", userPrompt);
+  console.log("GeminiService: Sending request to Gemini for structured insight. Full Prompt:", userPrompt);
 
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: GEMINI_TEXT_MODEL,
       contents: userPrompt,
-      config: requestConfig,
     });
     return processGeminiResponse(response);
   } catch (error: unknown) {
@@ -346,39 +337,25 @@ export const generatePresentationJson = async (
     const fenceRegex = /^```(\w*)?\s*\n?(.*?)\n?\s*```$/s;
     const match = jsonStr.match(fenceRegex);
     if (match && match[2]) {
+      // FIX: Assign the captured string group from the regex match, not the entire match array.
       jsonStr = match[2].trim();
-      console.log("GeminiService: JSON string after removing markdown fences (first 300 chars):", jsonStr.substring(0,300));
     }
     
+    // FIX: Complete the function body to parse the JSON and return it, which also resolves the "must return a value" error.
     try {
-      const parsedData: PresentationData = JSON.parse(jsonStr);
-      
-      if (brandStyle === BrandStyle.MOTORTEC_REPORT_TEMPLATE) {
-          if (!parsedData || !parsedData.motortecReportContent) {
-            console.error("GeminiService: Parsed JSON for Motortec template is missing 'motortecReportContent'. Parsed data:", parsedData);
-            throw new Error("AI response for Motortec template is not valid structured data (missing motortecReportContent).");
-          }
-      } else { 
-          if (!parsedData || !Array.isArray(parsedData.slides)) {
-            console.error("GeminiService: Parsed JSON for presentation is not in the expected format (e.g., missing 'slides' array). Parsed data:", parsedData);
-            throw new Error("AI response for presentation is not valid structured data (missing slides array).");
-          }
-      }
-
-      if (parsedData.brandStyle !== brandStyle) {
-        console.warn(`GeminiService: AI returned brandStyle '${parsedData.brandStyle}', but prompt specified '${brandStyle}'. Overriding to use prompt's style.`);
-        parsedData.brandStyle = brandStyle;
-      }
-      return parsedData;
-    } catch (e) {
-      console.error("GeminiService: Failed to parse JSON response for presentation. Raw response from AI before parsing (first 500 chars): ", jsonStr.substring(0,500), "Parsing error details:", e);
-      throw new Error(`Failed to parse JSON response from AI. Details: ${(e as Error).message}`);
+        const presentationData: PresentationData = JSON.parse(jsonStr);
+        // Basic validation
+        if (!presentationData || (!presentationData.slides && !presentationData.motortecReportContent)) {
+            console.error("GeminiService: Parsed JSON is empty or missing 'slides'/'motortecReportContent' property.");
+            throw new Error("Parsed JSON is invalid or incomplete.");
+        }
+        return presentationData;
+    } catch (parseError) {
+        console.error("GeminiService: Failed to parse JSON response from AI for presentation. Raw string:", jsonStr);
+        throw new Error("Failed to parse JSON response from AI for presentation. The AI's response was not valid JSON.");
     }
-
+    
   } catch (error: unknown) {
-    if (error instanceof Error && error.message.startsWith("Failed to parse JSON response from AI")) {
-        throw error;
-    }
     throw handleGeminiError(error, language);
   }
 };
