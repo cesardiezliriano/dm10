@@ -141,7 +141,8 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
     }
   }, [copyStatusMessage]);
 
-  // STATE 1: Initial placeholder (insight is null)
+  // STATE 1: Initial placeholder (insight is null). This is the critical fix.
+  // By checking for null at the very top, we prevent any processing on a null value.
   if (insight === null) {
     return (
       <div className="text-llyc-gris-02 p-4 border border-llyc-gris-03 rounded-lg bg-llyc-azul-oscuro/5 h-full flex flex-col items-center justify-center text-center">
@@ -154,7 +155,7 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
     );
   }
 
-  // STATE 2: Insight generation has been attempted (insight is now a string, possibly empty)
+  // If we reach this point, `insight` is guaranteed to be a string.
   const isEffectivelyEmpty = insight.trim() === '';
 
   const insightPartsHtml = useMemo(() => {
@@ -162,30 +163,24 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
 
     let parts: string[] = [];
 
-    // The user's diagnosis is that the markdown parser fails when a table is immediately
-    // followed by the conclusions heading. This is specific to the 'structured' summary mode.
-    // By splitting the content and rendering each part separately, we avoid the parser bug.
     if (currentMode === 'structured') {
       const separatorRegex = /(?=##\s*(?:Conclusiones Estratégicas|Strategic Conclusions))/i;
       const splitParts = insight.split(separatorRegex);
       if (splitParts.length > 1) {
-        console.log("InsightDisplay: Splitting structured insight into table and conclusions for robust rendering.");
-        parts = splitParts.filter(p => p.trim() !== ''); // Filter out empty parts
+        parts = splitParts.filter(p => p.trim() !== '');
       } else {
-        parts = [insight]; // If split fails, treat as a single part
+        parts = [insight];
       }
     } else {
-      parts = [insight]; // For aggregated mode, treat the whole insight as a single part
+      parts = [insight];
     }
     
-    // Now, parse each part into HTML
     return parts.map((part, index) => {
       try {
         const html = marked.parse(part, { renderer: llycMarkdownRenderer, gfm: true, breaks: true }) as string;
         if (html && html.replace(/<[^>]*>/g, '').trim() !== '') {
             return html;
         }
-        // Fallback for parts that parse to empty strings
         return `<pre style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(part)}</pre>`;
       } catch (error) {
         console.error(`[InsightDisplay useMemo] Error parsing markdown part ${index + 1}. Falling back.`, error);
@@ -214,7 +209,7 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
 
     if (sources && sources.length > 0) {
         body += "\n\n---\n" + getText(language, 'LABEL_GROUNDING_SOURCES') + "\n";
-        sources.forEach(sourceItem => { // Renamed to avoid conflict
+        sources.forEach(sourceItem => {
             if (sourceItem.web) {
                 body += `- ${sourceItem.web.title || ''}: ${sourceItem.web.uri}\n`;
             }
@@ -226,11 +221,11 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
 
   return (
     <React.Fragment>
-      <div className="space-y-4 h-full"> {/* Ensure outer container can provide height for h-full */}
+      <div className="space-y-4 h-full">
           <div 
             className={`relative p-4 bg-llyc-azul-oscuro/5 border border-llyc-gris-03 rounded-lg shadow text-[#0A263B] ${isEffectivelyEmpty ? 'h-full flex flex-col' : ''}`}
           >
-            <div className="absolute top-2.5 right-2.5 flex items-center space-x-2 z-10"> {/* Added z-10 */}
+            <div className="absolute top-2.5 right-2.5 flex items-center space-x-2 z-10">
               {copyStatusMessage && (
                 <span className="text-xs text-[#36A7B7] bg-[#36A7B7]/10 px-2 py-0.5 rounded-md transition-opacity duration-300">
                   {copyStatusMessage}
@@ -259,7 +254,7 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
             </div>
 
             {isEffectivelyEmpty ? (
-                <div className="flex-grow flex flex-col items-center justify-center text-center text-llyc-gris-02"> {/* Removed py-8, uses flex-grow now */}
+                <div className="flex-grow flex flex-col items-center justify-center text-center text-llyc-gris-02">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-llyc-gris-03 mb-3 opacity-70" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
                     </svg>
@@ -276,7 +271,7 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
                 </div>
             )}
             
-            {sources && sources.length > 0 && !isEffectivelyEmpty && ( // Also hide sources if effectively empty
+            {sources && sources.length > 0 && !isEffectivelyEmpty && (
                 <div className="mt-6 pt-4 border-t border-gray-200">
                 <h4 className="text-xs font-semibold text-[#0A263B] mb-2" style={{fontFamily: "'Montserrat', sans-serif"}}>
                     {getText(language, 'LABEL_GROUNDING_SOURCES')}
@@ -307,7 +302,7 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
                 <button
                     type="button"
                     onClick={onGeneratePresentation}
-                    disabled={isGeneratingPresentation || isEffectivelyEmpty} // Disable if insight is empty
+                    disabled={isGeneratingPresentation || isEffectivelyEmpty}
                     className="w-full flex justify-center items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#0A263B] hover:bg-[#0E2A47] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-[#0A263B] disabled:opacity-60 disabled:cursor-not-allowed transition duration-150 ease-in-out"
                     style={{fontFamily: "'Montserrat', sans-serif", fontWeight: 600}}
                 >

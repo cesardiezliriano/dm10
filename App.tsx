@@ -274,7 +274,7 @@ const App: React.FC = () => {
             />
         </div>
         <div className="mt-2">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#F54963] py-2 text-left" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#F54963] py-2 text-left" style={{ fontFamily: "'Montserrat', sans-serif" }}>
             {getText(selectedLanguage, 'APP_TITLE')}
             </h1>
             <p className="text-[#6D7475] text-sm sm:text-base text-left">

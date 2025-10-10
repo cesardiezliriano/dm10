@@ -1,12 +1,16 @@
 import React from 'react';
 
-// This file was incorrectly named with a .tsx extension but did not contain a React component,
-// which caused a conflict with React's Rules of Hooks during transpilation.
-// It has been replaced with a valid, empty component to resolve the error.
-// Please consider deleting this file if it is not intended to be part of the project.
+// This file is a placeholder to resolve an import conflict.
+// It exports a dummy component to prevent the application from crashing
+// if an old import path accidentally points to this root file instead of
+// the correct component in `/components/FeedbackButton.tsx`.
+// This file should ideally be deleted and the incorrect import path fixed.
 
-const PlaceholderComponent: React.FC = () => {
-  return null;
+const DummyFeedbackButton: React.FC = () => {
+    // This component renders nothing and logs a warning to the console.
+    console.warn("DEV WARNING: The dummy FeedbackButton component from the root directory was rendered. This indicates an incorrect import path is being used. Please import from './components/FeedbackButton.tsx' instead.");
+    return null;
 };
 
-export default PlaceholderComponent;
+export const FeedbackButton = DummyFeedbackButton;
+export default DummyFeedbackButton;
