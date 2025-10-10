@@ -130,19 +130,9 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
     presentationError,
     placeholderText 
 }) => {
-  const [copyStatusMessage, setCopyStatusMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (copyStatusMessage) {
-      const timer = setTimeout(() => {
-        setCopyStatusMessage(null);
-      }, 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [copyStatusMessage]);
-
-  // STATE 1: Initial placeholder (insight is null). This is the critical fix.
+  // STATE 1: Initial placeholder check. THIS IS THE CRITICAL FIX.
   // By checking for null at the very top, we prevent any processing on a null value.
+  // If insight is null, we return the placeholder immediately and the function stops executing.
   if (insight === null) {
     return (
       <div className="text-llyc-gris-02 p-4 border border-llyc-gris-03 rounded-lg bg-llyc-azul-oscuro/5 h-full flex flex-col items-center justify-center text-center">
@@ -155,7 +145,18 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
     );
   }
 
-  // If we reach this point, `insight` is guaranteed to be a string.
+  const [copyStatusMessage, setCopyStatusMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (copyStatusMessage) {
+      const timer = setTimeout(() => {
+        setCopyStatusMessage(null);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [copyStatusMessage]);
+  
+  // If we reach this point, `insight` is guaranteed to be a non-null string.
   const isEffectivelyEmpty = insight.trim() === '';
 
   const insightPartsHtml = useMemo(() => {
