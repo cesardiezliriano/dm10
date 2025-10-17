@@ -1,4 +1,3 @@
-
 export enum DataSource {
   GOOGLE_ADS = "Google Ads",
   META_ADS = "Meta Ads",
@@ -24,7 +23,9 @@ export enum BrandStyle {
 export interface AggregatedDataBlock {
   id: string; // For React keys
   source: DataSource;
-  timePeriod: string;
+  timePeriodSelection: TimePeriod;
+  customStartDate?: string;
+  customEndDate?: string;
   kpis: string;
 }
 
@@ -84,8 +85,15 @@ export enum TimePeriod {
 export interface CampaignMetrics {
   impressions: number;
   clicks: number;
-  conversions: number;
   cost: number;
+  primaryMetricName: string; // e.g., "Conversions", "ROAS", "CPA"
+  primaryMetricValue: number;
+}
+
+export interface CampaignGoals {
+  targetCPA?: number;
+  targetCTR?: number; // Stored as decimal, e.g., 0.02 for 2%
+  targetCVR?: number; // Stored as decimal, e.g., 0.05 for 5%
 }
 
 export interface StructuredInsightRequest {
@@ -93,6 +101,7 @@ export interface StructuredInsightRequest {
   timePeriod: TimePeriod;
   currentMetrics: CampaignMetrics;
   previousMetrics?: CampaignMetrics; // Optional, for comparison
+  campaignGoals?: CampaignGoals; // Optional, for performance evaluation
   startDate?: string; // e.g., "2024-05-01"
   endDate?: string;   // e.g., "2024-05-23"
 }
@@ -395,9 +404,15 @@ export type UIStringKeys =
   | "SECTION_TITLE_CURRENT_PERIOD"
   | "LABEL_COMPARE_PERIOD"
   | "SECTION_TITLE_PREVIOUS_PERIOD"
+  | "LABEL_CAMPAIGN_GOALS_SECTION"
+  | "LABEL_TARGET_CPA"
+  | "LABEL_TARGET_CTR"
+  | "LABEL_TARGET_CVR"
   | "LABEL_IMPRESSIONS"
   | "LABEL_CLICKS"
   | "LABEL_CONVERSIONS"
+  | "LABEL_PRIMARY_METRIC_NAME"
+  | "LABEL_PRIMARY_METRIC_VALUE"
   | "LABEL_COST"
   | "ALERT_METRICS_NEGATIVE"
   | "ALERT_CLICKS_GT_IMPRESSIONS"
@@ -431,6 +446,8 @@ export type UIStringKeys =
   | "HELP_TOPIC_WHAT_IS_THIS_APP_ANSWER"
   | "HELP_TOPIC_DATA_INPUT_TIPS_QUESTION"
   | "HELP_TOPIC_DATA_INPUT_TIPS_ANSWER"
+  | "HELP_TOPIC_EXCEL_GUIDE_QUESTION"
+  | "HELP_TOPIC_EXCEL_GUIDE_ANSWER"
   | "HELP_TOPIC_UNDERSTANDING_INSIGHTS_QUESTION"
   | "HELP_TOPIC_UNDERSTANDING_INSIGHTS_ANSWER"
   | "HELP_TOPIC_PPT_GENERATION_QUESTION"

@@ -264,7 +264,7 @@ export const generateStructuredInsight = async (
   }
 
   // The new prompt from constants.ts now contains the persona and full instructions.
-  const userPrompt = basePromptFn(timePeriodLabel, request.currentMetrics, request.previousMetrics, language);
+  const userPrompt = basePromptFn(timePeriodLabel, request.currentMetrics, request.previousMetrics, language, request.campaignGoals);
   
   console.log("GeminiService: Sending request to Gemini for structured insight. Full Prompt:", userPrompt);
 

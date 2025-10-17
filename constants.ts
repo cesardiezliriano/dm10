@@ -1,4 +1,4 @@
-import { DataSource, StructuredCampaignPlatform, TimePeriod, Language, SlideType, KpiItem, PresentationData, SlideContent, KpiHighlightSection, BrandStyle, MotortecReportContent, HelpTopic, UIStringKeys, CampaignMetrics } from './types.ts';
+import { DataSource, StructuredCampaignPlatform, TimePeriod, Language, SlideType, KpiItem, PresentationData, SlideContent, KpiHighlightSection, BrandStyle, MotortecReportContent, HelpTopic, UIStringKeys, CampaignMetrics, CampaignGoals } from './types.ts';
 
 // --- Critical App Configuration ---
 // This must be replaced with the actual Google Client ID from Google Cloud Console.
@@ -267,9 +267,15 @@ const UI_STRINGS: Record<UIStringKeys, Record<Language, string> | Partial<Record
   SECTION_TITLE_CURRENT_PERIOD: { [Language.EN]: "Current Period Metrics", [Language.ES]: "Métricas del Periodo Actual" },
   LABEL_COMPARE_PERIOD: { [Language.EN]: "Compare to previous period", [Language.ES]: "Comparar con periodo anterior" },
   SECTION_TITLE_PREVIOUS_PERIOD: { [Language.EN]: "Previous Period Metrics", [Language.ES]: "Métricas del Periodo Anterior" },
+  LABEL_CAMPAIGN_GOALS_SECTION: { [Language.EN]: "Campaign Goals (Optional, Planned)", [Language.ES]: "Objetivos de Campaña (Opcional, Planificado)" },
+  LABEL_TARGET_CPA: { [Language.EN]: "Target CPA", [Language.ES]: "CPA Objetivo" },
+  LABEL_TARGET_CTR: { [Language.EN]: "Target CTR (%)", [Language.ES]: "CTR Objetivo (%)" },
+  LABEL_TARGET_CVR: { [Language.EN]: "Target CVR (%)", [Language.ES]: "CVR Objetivo (%)" },
   LABEL_IMPRESSIONS: { [Language.EN]: "Impressions", [Language.ES]: "Impresiones" },
   LABEL_CLICKS: { [Language.EN]: "Clicks", [Language.ES]: "Clics" },
   LABEL_CONVERSIONS: { [Language.EN]: "Conversions", [Language.ES]: "Conversiones" },
+  LABEL_PRIMARY_METRIC_NAME: { [Language.EN]: "Primary Metric", [Language.ES]: "Métrica Principal" },
+  LABEL_PRIMARY_METRIC_VALUE: { [Language.EN]: "Primary Metric Value", [Language.ES]: "Valor Métrica Principal" },
   LABEL_COST: { [Language.EN]: "Cost (e.g., USD)", [Language.ES]: "Costo (ej., USD)" },
   ALERT_METRICS_NEGATIVE: { [Language.EN]: "Metric values cannot be negative.", [Language.ES]: "Los valores de las métricas no pueden ser negativos." },
   ALERT_CLICKS_GT_IMPRESSIONS: { [Language.EN]: "Clicks cannot be greater than impressions for the specified period.", [Language.ES]: "Los clics no pueden ser mayores que las impresiones para el periodo especificado." },
@@ -369,6 +375,14 @@ const UI_STRINGS: Record<UIStringKeys, Record<Language, string> | Partial<Record
     [Language.EN]: "For the best results in **Aggregated Data Analysis**:\n\n1.  **Be Clear**: If pasting data from multiple sources (e.g., Google Ads and Meta Ads), label each section clearly. Example:\n    `=== Google Ads - Last 30 Days ===\n    Spend: $1000, Clicks: 2000, Conversions: 50\n\n    === Meta Ads - Last 30 Days ===\n    Spend: $800, Impressions: 100000, Leads: 30`\n2.  **Context is Key**: Use the optional fields (Client Name, Sector, Market, Additional Context) to give the AI more background. This helps generate more relevant insights.\n3.  **Summarized Data**: Provide summarized data (e.g., total spend, average CPC) rather than raw, row-level data dumps.\n4.  **Excel Files**: If using Excel, ensure data is on the first sheet in a clear tabular format. The content will be appended to the text area.\n5.  **Specific Questions**: Use the 'Specific Questions' field to guide the AI if you have particular areas of interest (e.g., \"Why did our CPA increase this month?\").\n6.  **Creatives**: Upload up to 5 images for visual analysis. The AI will comment on their visual elements and potential effectiveness.",
     [Language.ES]: "Para obtener los mejores resultados en el **Análisis de Datos Agregados**:\n\n1.  **Sé Claro/a**: Si pegas datos de múltiples fuentes (ej., de Google Ads y Meta Ads), etiqueta cada sección claramente. Ejemplo:\n    `=== Google Ads - Últimos 30 Días ===\n    Gasto: $1000, Clics: 2000, Conversiones: 50\n\n    === Meta Ads - Últimos 30 Días ===\n    Gasto: $800, Impresiones: 100000, Leads: 30`\n2.  **El Contexto es Clave**: Utiliza los campos opcionales (Nombre del Cliente, Sector, Mercado, Contexto Adicional) para dar más trasfondo a la IA. Esto ayuda a generar insights más relevantes.\n3.  **Datos Resumidos**: Proporciona datos resumidos (ej., gasto total, CPC promedio) en lugar de volcados de datos brutos a nivel de fila.\n4.  **Archivos Excel**: Si usas Excel, asegúrate de que los datos estén en la primera hoja en un formato tabular claro. El contenido se añadirá al área de texto.\n5.  **Preguntas Específicas**: Usa el campo 'Preguntas Específicas' para guiar a la IA si tienes áreas particulares de interés (ej., \"¿Por qué aumentó nuestro CPA este mes?\").\n6.  **Creatividades**: Sube hasta 5 imágenes para análisis visual. La IA comentará sobre sus elementos visuais y su posible efectividad."
   },
+  HELP_TOPIC_EXCEL_GUIDE_QUESTION: {
+    [Language.EN]: "What's the best way to format an Excel file?",
+    [Language.ES]: "¿Cuál es la mejor manera de formatear un archivo Excel?"
+  },
+  HELP_TOPIC_EXCEL_GUIDE_ANSWER: {
+    [Language.EN]: "To get the best results when uploading an Excel file, follow these key guidelines. The tool is designed to read simple, clean tables.\n\n### 1. Use Only the First Worksheet\nThe application will **only read data from the very first sheet** in your Excel workbook. Any data on other sheets will be ignored.\n\n### 2. Simple Tabular Structure\nOrganize your data in a clear table format. The first row should contain your headers, and subsequent rows should contain the corresponding data.\n\n**✓ Good Example:**\n| Campaign Name       | Spend  | Impressions | Clicks | Conversions |\n|---------------------|--------|-------------|--------|-------------|\n| Brand Awareness Q1  | 5000   | 1500000     | 7500   | 50          |\n| Lead Gen Spring     | 8500   | 450000      | 9800   | 450         |\n\n### 3. Avoid Complex Formatting\n- **No Merged Cells**: Do not merge cells. Each piece of data should reside in its own individual cell.\n- **No Blank Rows**: Avoid blank rows within your data table, as this can stop the parsing process.\n- **Summarized Data**: Provide aggregated or summarized data. The tool is not designed to process thousands of raw, row-level log entries.\n\n### 4. What Gets Ignored\nThe system only extracts the **raw text and numeric values** from the cells. The following will be completely ignored:\n- Charts and graphs\n- Images, shapes, and drawings\n- Formulas (only the calculated result is read)\n- Cell colors, font styles, and other formatting\n- Pivot tables (please convert them to flat tables first)\n- Macros\n\nBy following this structure, you ensure the AI receives clean, well-organized data, which leads to much more accurate and insightful analysis.",
+    [Language.ES]: "Para obtener los mejores resultados al subir un archivo Excel, sigue estas pautas clave. La herramienta está diseñada para leer tablas simples y limpias.\n\n### 1. Usa Solo la Primera Hoja\nLa aplicación **solo leerá los datos de la primera hoja** de tu libro de Excel. Cualquier dato en otras hojas será ignorado.\n\n### 2. Estructura Tabular Simple\nOrganiza tus datos en un formato de tabla claro. La primera fila debe contener los encabezados, y las filas siguientes deben contener los datos correspondientes.\n\n**✓ Buen Ejemplo:**\n| Nombre de Campaña   | Inversión | Impresiones | Clics | Conversiones |\n|---------------------|-----------|-------------|-------|--------------|\n| Notoriedad Q1       | 5000      | 1500000     | 7500  | 50           |\n| Leads Primavera     | 8500      | 450000      | 9800  | 450          |\n\n### 3. Evita Formatos Complejos\n- **Sin Celdas Combinadas**: No combines celdas. Cada dato debe estar en su propia celda individual.\n- **Sin Filas en Blanco**: Evita filas en blanco dentro de tu tabla de datos, ya que esto puede detener el proceso de lectura.\n- **Datos Resumidos**: Proporciona datos agregados o resumidos. La herramienta no está diseñada para procesar miles de registros brutos a nivel de fila.\n\n### 4. Qué se Ignora\nEl sistema solo extrae los **valores de texto y numéricos brutos** de las celdas. Lo siguiente será completamente ignorado:\n- Gráficos y diagramas\n- Imágenes, formas y dibujos\n- Fórmulas (solo se lee el resultado calculado)\n- Colores de celda, estilos de fuente y otros formatos\n- Tablas dinámicas (por favor, conviértelas primero en tablas planas)\n- Macros\n\nAl seguir esta estructura, te aseguras de que la IA reciba datos limpios y bien organizados, lo que conduce a un análisis mucho más preciso y revelador."
+  },
   HELP_TOPIC_UNDERSTANDING_INSIGHTS_QUESTION: {
     [Language.EN]: "How do I interpret the generated insights?",
     [Language.ES]: "¿Cómo interpreto los insights generados?"
@@ -383,7 +397,7 @@ const UI_STRINGS: Record<UIStringKeys, Record<Language, string> | Partial<Record
   },
   HELP_TOPIC_PPT_GENERATION_ANSWER: {
     [Language.EN]: "After generating insights for **Aggregated Data Analysis**, you can click the \"Generate Presentation\" button.\n\nThe AI will take the textual insight and your original input data to structure a PowerPoint presentation. \n\n1.  **Brand Style**: Select a brand style (LLYC Default, IFEMA MADRID, Motortec Report Template) before generating insights. This style will be applied to the presentation.\n2.  **Content**: The AI attempts to map the textual insight (including visual analysis of any uploaded creatives) into a slide structure relevant to the chosen brand style.\n3.  **Download**: The PPTX file will be automatically downloaded by your browser.\n\n**Important Notes:**\n- Ensure you have generated insights first.\n- The quality of the presentation depends on the clarity and comprehensiveness of the textual insight generated by the AI.\n- For the 'Motortec Report Template', the AI will try to fill a predefined slide structure. For other styles, it generates a more general consultancy report structure.\n- If you encounter errors, try re-generating the insights with clear data and context. Ensure creative filenames are simple if issues persist with image inclusion in Motortec templates.",
-    [Language.ES]: "Después de generar insights para el **Análisis de Datos Agregados**, puedes hacer clic en el botón \"Generar Presentación\".\n\nLa IA tomará el insight textual y tus datos de entrada originales para estructurar una presentación de PowerPoint.\n\n1.  **Estilo de Marca**: Selecciona un estilo de marca (LLYC Default, IFEMA MADRID, Plantilla Informe Motortec) antes de generar los insights. Este estilo se aplicará a la presentación.\n2.  **Contenido**: La IA intenta mapear el insight textual (incluido el análisis visual de cualquier creatividad subida) en una estructura de diapositivas relevante para el estilo de marca elegido.\n3.  **Descarga**: El archivo PPTX será descargado automáticamente por tu navegador.\n\n**Notas Importantes:**\n- Asegúrate de haber generado los insights primero.\n- La calidad de la presentación depende de la claridad y exhaustividad del insight textual generado por la IA.\n- Para la 'Plantilla Informe Motortec', la IA intentará rellenar una estructura de diapositivas predefinida. Para otros estilos, genera una estructura de informe de consultoría más general.\n- Si encuentras errores, intenta regenerar los insights con datos y contexto claros. Asegúrate de que los nombres de archivo de las creatividades sean simples si persisten los problemas con la inclusión de imágenes en las plantillas Motortec."
+    [Language.ES]: "Después de generar insights para el **Análisis de Datos Agregados**, puedes hacer clic en el botón \"Generar Presentación\".\n\nLa IA tomará el insight textual y tus datos de entrada originales para estructurar una presentación de PowerPoint.\n\n1.  **Estilo de Marca**: Selecciona un estilo de marca (LLYC Default, IFEMA MADRID, Plantilla Informe Motortec) antes de generar los insights. Este estilo se aplicará a la presentación.\n2.  **Contenido**: La IA intenta mapear el insight textual (incluido el análisis visual de cualquier creatividad subida) en una estructura de diapositivas relevante para el estilo de marca elegido.\n3.  **Descarga**: El archivo PPTX será descargado automáticamente por tu navegador.\n\n**Notas Importantes:**\n- Asegúrate de que los insights se hayan generado primero.\n- La calidad de la presentación depende de la claridad y exhaustividad del insight textual generado por la IA.\n- Para la 'Plantilla Informe Motortec', la IA intentará rellenar una estructura de diapositivas predefinida. Para otros estilos, genera una estructura de informe de consultoría más general.\n- Si encuentras errores, intenta regenerar los insights con datos y contexto claros. Asegúrate de que los nombres de archivo de las creatividades sean simples si persisten los problemas con la inclusión de imágenes en las plantillas Motortec."
   },
 };
 
@@ -521,17 +535,39 @@ const generateComparisonPromptPart = (previousMetrics?: CampaignMetrics): string
 - **Métricas del Periodo Anterior:**
   - Impresiones: ${previousMetrics.impressions}
   - Clics: ${previousMetrics.clicks}
-  - Conversiones: ${previousMetrics.conversions}
+  - ${previousMetrics.primaryMetricName || 'Métrica Principal'}: ${previousMetrics.primaryMetricValue}
   - Costo: ${previousMetrics.cost}`;
 };
 
-const getMetricNames = (language: Language) => {
+const generateGoalsPromptPart = (campaignGoals: CampaignGoals | undefined, language: Language): string => {
+    if (!campaignGoals) return '';
+
+    const goals: string[] = [];
+    if (campaignGoals.targetCPA) {
+        goals.push(`  - CPA Objetivo: ${campaignGoals.targetCPA}`);
+    }
+    if (campaignGoals.targetCTR) {
+        goals.push(`  - CTR Objetivo: ${(campaignGoals.targetCTR * 100).toFixed(2)}%`);
+    }
+    if (campaignGoals.targetCVR) {
+        goals.push(`  - CVR Objetivo: ${(campaignGoals.targetCVR * 100).toFixed(2)}%`);
+    }
+
+    if (goals.length === 0) return '';
+
+    const title = language === Language.ES ? "Objetivos de la Campaña (Planificado):" : "Campaign Goals (Planned):";
+    return `
+- **${title}**
+${goals.join('\n')}`;
+};
+
+const getMetricNames = (language: Language, primaryMetricName: string) => {
     const isEs = language === Language.ES;
     return {
         impressions: isEs ? "Impresiones" : "Impressions",
         clicks: isEs ? "Clics" : "Clicks",
-        conversions: isEs ? "Conversiones" : "Conversions",
         cost: isEs ? "Costo" : "Cost",
+        primaryMetric: primaryMetricName || (isEs ? "Métrica Principal" : "Primary Metric"),
         ctr: isEs ? "CTR (Tasa de Clics)" : "CTR (Click-Through Rate)",
         cpc: isEs ? "CPC (Costo por Clic)" : "CPC (Cost Per Click)",
         cpa: isEs ? "CPA (Costo por Adquisición)" : "CPA (Cost Per Acquisition)",
@@ -550,23 +586,28 @@ const getColumnNames = (language: Language) => {
     };
 };
 
-const generateBasePrompt = (platformName: string, timePeriodLabel: string, currentMetrics: CampaignMetrics, previousMetrics: CampaignMetrics | undefined, language: Language) => {
+const generateBasePrompt = (platformName: string, timePeriodLabel: string, currentMetrics: CampaignMetrics, previousMetrics: CampaignMetrics | undefined, language: Language, campaignGoals: CampaignGoals | undefined) => {
     const comparisonPrompt = generateComparisonPromptPart(previousMetrics);
-    const metricNames = getMetricNames(language);
+    const goalsPrompt = generateGoalsPromptPart(campaignGoals, language);
+    const metricNames = getMetricNames(language, currentMetrics.primaryMetricName);
     const columnNames = getColumnNames(language);
     const languageText = language === Language.ES ? 'Español' : 'English';
     const languageInstruction = `La respuesta final debe estar íntegramente en ${languageText}.`;
-
-    const requiredRows = [
+    
+    // Dynamically determine which rows to include in the table
+    const isConversionMetric = /conversiones|conversions|leads/i.test(currentMetrics.primaryMetricName);
+    const baseRows = [
         metricNames.impressions,
         metricNames.clicks,
-        metricNames.conversions,
         metricNames.cost,
+        `"${metricNames.primaryMetric}"`, // Ensure the name is quoted if it contains spaces
         metricNames.ctr,
-        metricNames.cpc,
-        metricNames.cpa,
-        metricNames.cvr
-    ].join(', ');
+        metricNames.cpc
+    ];
+    if (isConversionMetric) {
+        baseRows.push(metricNames.cpa, metricNames.cvr);
+    }
+    const requiredRows = baseRows.join(', ');
 
     let requiredColumns = `"${columnNames.metric}", "${columnNames.current}"`;
     if (previousMetrics) {
@@ -574,15 +615,19 @@ const generateBasePrompt = (platformName: string, timePeriodLabel: string, curre
     }
     
     return `
-**TU ROL:** Eres un Director Senior de Marketing Digital y Paid Media con más de 10 años de experiencia. Tu visión es estratégica y estás enfocado en resultados de negocio. Analiza los siguientes datos de campaña y proporciona un resumen ejecutivo para un cliente. Tu tono debe ser experto, claro y directo.
+**TU ROL:** Eres un Director de Marketing experto con más de 20 años de experiencia. Tu visión es profundamente estratégica y estás enfocado en los resultados de negocio y el ROI. Analiza los siguientes datos de campaña y proporciona un resumen ejecutivo para un cliente. Tu tono debe ser el de un experto consumado, claro, conciso y directo al grano.
+
+**INSTRUCCIÓN CRÍTICA DE ANÁLISIS:**
+**DEBES usar los 'Objetivos de la Campaña (Planificado)' proporcionados como el principal punto de referencia para tu evaluación.** Tu análisis sobre si los resultados son "buenos" o "malos" **DEBE basarse en si se cumplieron, superaron o no se alcanzaron estos objetivos.** Compara explícitamente los resultados actuales con estos objetivos en tus conclusiones.
 
 **DATOS A ANALIZAR:**
 - **Plataforma:** ${platformName}
 - **Periodo:** ${timePeriodLabel}
+${goalsPrompt}
 - **Métricas del Periodo Actual:**
   - Impresiones: ${currentMetrics.impressions}
   - Clics: ${currentMetrics.clicks}
-  - Conversiones: ${currentMetrics.conversions}
+  - ${currentMetrics.primaryMetricName || 'Métrica Principal'}: ${currentMetrics.primaryMetricValue}
   - Costo: ${currentMetrics.cost}
 ${comparisonPrompt}
 
@@ -596,26 +641,27 @@ Tu respuesta DEBE seguir este formato de dos partes, en este orden exacto y sin 
 Genera una tabla en formato Markdown. **No añadas ningún texto antes de la tabla.**
 - **Columnas Requeridas:** ${requiredColumns}.
 - **Filas Requeridas:** La primera columna ('${columnNames.metric}') debe contener, en orden, los siguientes nombres de métricas: ${requiredRows}.
-- Rellena los datos para las métricas proporcionadas (Impresiones, Clics, Conversiones, Costo).
-- **Calcula y rellena** los datos para las métricas derivadas (CTR, CPC, CPA, CVR).
+- Rellena los datos para las métricas proporcionadas (Impresiones, Clics, Costo, y "${metricNames.primaryMetric}").
+- **Calcula y rellena** los datos para las métricas derivadas (CTR, CPC).
+- **Si la métrica principal es de conversión (ej. "Conversiones", "Leads"), calcula y añade también el CPA y el CVR.** Si es otra métrica (ej. "ROAS", "Visualizaciones"), omite el CPA y el CVR.
 - Si hay datos de comparación, calcula el "Cambio %" para TODAS las filas.
 
 **PARTE 2: Conclusiones Estratégicas**
 Después de la tabla, **DEJA UNA LÍNEA EN BLANCO** y luego, en la siguiente línea, añade el encabezado \`## ${metricNames.strategicConclusions}\`. Este espaciado es crucial para el formato correcto.
 Bajo este encabezado, proporciona tu análisis experto en 3 a 5 viñetas (bullet points).
-- **Interpreta los datos, no los repitas.** Explica qué significan para el negocio.
-- Enfócate en la eficiencia de la inversión (CPC, CPA), la calidad del tráfico (CTR), el impacto en el negocio (Conversiones, CVR) y las tendencias.
-- **Usa negrita (**) para resaltar métricas y conclusiones clave.**
+- **Interpreta los datos, no los repitas. Compara explícitamente los resultados con los objetivos de la campaña.** Explica qué significa para el negocio si los objetivos se cumplieron o no.
+- Enfócate en la eficiencia de la inversión (CPC, y CPA si aplica) en relación con los objetivos. Analiza la calidad del tráfico (CTR) y el impacto en el negocio (métrica principal) frente a lo planificado.
+- **Usa negrita (**) para resaltar métricas y conclusiones estratégicas clave, especialmente al comparar con los objetivos.**
 `;
 };
 
 
 export const PROMPT_TEMPLATES = {
-  [StructuredCampaignPlatform.GOOGLE_ADS]: (timePeriodLabel: string, currentMetrics: CampaignMetrics, previousMetrics: CampaignMetrics | undefined, language: Language) => 
-    generateBasePrompt("Google Ads", timePeriodLabel, currentMetrics, previousMetrics, language),
+  [StructuredCampaignPlatform.GOOGLE_ADS]: (timePeriodLabel: string, currentMetrics: CampaignMetrics, previousMetrics: CampaignMetrics | undefined, language: Language, campaignGoals: CampaignGoals | undefined) => 
+    generateBasePrompt("Google Ads", timePeriodLabel, currentMetrics, previousMetrics, language, campaignGoals),
 
-  [StructuredCampaignPlatform.META_ADS]: (timePeriodLabel: string, currentMetrics: CampaignMetrics, previousMetrics: CampaignMetrics | undefined, language: Language) =>
-    generateBasePrompt("Meta Ads", timePeriodLabel, currentMetrics, previousMetrics, language)
+  [StructuredCampaignPlatform.META_ADS]: (timePeriodLabel: string, currentMetrics: CampaignMetrics, previousMetrics: CampaignMetrics | undefined, language: Language, campaignGoals: CampaignGoals | undefined) =>
+    generateBasePrompt("Meta Ads", timePeriodLabel, currentMetrics, previousMetrics, language, campaignGoals)
 };
 
 const getMotortecTemplateExampleJson = (language: Language, clientName: string, brandStyle: BrandStyle): MotortecReportContent => {
@@ -887,6 +933,7 @@ Begin JSON output now:
 export const HELP_TOPICS_LIST: HelpTopic[] = [
   { id: 'what-is-this-app', questionKey: 'HELP_TOPIC_WHAT_IS_THIS_APP_QUESTION', answerKey: 'HELP_TOPIC_WHAT_IS_THIS_APP_ANSWER' },
   { id: 'data-input-tips', questionKey: 'HELP_TOPIC_DATA_INPUT_TIPS_QUESTION', answerKey: 'HELP_TOPIC_DATA_INPUT_TIPS_ANSWER' },
+  { id: 'excel-guide', questionKey: 'HELP_TOPIC_EXCEL_GUIDE_QUESTION', answerKey: 'HELP_TOPIC_EXCEL_GUIDE_ANSWER' },
   { id: 'understanding-insights', questionKey: 'HELP_TOPIC_UNDERSTANDING_INSIGHTS_QUESTION', answerKey: 'HELP_TOPIC_UNDERSTANDING_INSIGHTS_ANSWER' },
   { id: 'ppt-generation', questionKey: 'HELP_TOPIC_PPT_GENERATION_QUESTION', answerKey: 'HELP_TOPIC_PPT_GENERATION_ANSWER' },
 ];

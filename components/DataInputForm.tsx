@@ -1,6 +1,7 @@
+
 import React from 'react';
 import * as XLSX from 'xlsx';
-import { DataSource, InsightRequest, Language, UploadedImage, BrandStyle, AggregatedDataBlock, ApiConnection } from '../types.ts'; 
+import { DataSource, InsightRequest, Language, UploadedImage, BrandStyle, AggregatedDataBlock, ApiConnection, TimePeriod } from '../types.ts'; 
 import { 
     DATA_SOURCE_OPTIONS, 
     BRAND_STYLE_OPTIONS,
@@ -10,7 +11,8 @@ import {
     CLIENT_NAME_PLACEHOLDER_FN,
     SECTOR_PLACEHOLDER_FN,
     CAMPAIGN_MARKET_PLACEHOLDER_FN,
-    PLACEHOLDER_DATA_BLOCK_TIME_PERIOD,
+    getTimePeriodOptions,
+    getTimePeriodLabel,
     PLACEHOLDER_DATA_BLOCK_KPIS,
     MAX_CREATIVES
 } from '../constants.ts';
@@ -30,6 +32,10 @@ const AccordionIcon: React.FC = () => (
     </svg>
 );
 
+const getISODateString = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+};
+
 
 export const DataInputForm: React.FC<DataInputFormProps> = ({ onSubmit, isLoading, language, selectedBrandStyle, onBrandStyleChange }) => {
   const [dataBlocks, setDataBlocks] = React.useState<AggregatedDataBlock[]>([]);
@@ -46,12 +52,16 @@ export const DataInputForm: React.FC<DataInputFormProps> = ({ onSubmit, isLoadin
   
   const excelFileInputRef = React.useRef<HTMLInputElement>(null);
   const creativeFileInputRef = React.useRef<HTMLInputElement>(null);
+  const timePeriodOptions = getTimePeriodOptions(language);
+
 
   const handleAddDataBlock = () => {
     const newBlock: AggregatedDataBlock = {
       id: crypto.randomUUID(),
       source: DataSource.PASTED_MANUAL,
-      timePeriod: '',
+      timePeriodSelection: TimePeriod.DAYS_30,
+      customStartDate: getISODateString(new Date(Date.now() - 29 * 24 * 60 * 60 * 1000)),
+      customEndDate: getISODateString(new Date()),
       kpis: ''
     };
     setDataBlocks(prev => [...prev, newBlock]);
@@ -121,7 +131,9 @@ export const DataInputForm: React.FC<DataInputFormProps> = ({ onSubmit, isLoadin
         const newBlock: AggregatedDataBlock = {
             id: crypto.randomUUID(),
             source: DataSource.PASTED_MANUAL,
-            timePeriod: `From file: ${file.name}`,
+            timePeriodSelection: TimePeriod.CUSTOM,
+            customStartDate: getISODateString(new Date()),
+            customEndDate: getISODateString(new Date()),
             kpis: tableMarkdown
         };
         setDataBlocks(prev => [...prev, newBlock]);
@@ -231,7 +243,15 @@ export const DataInputForm: React.FC<DataInputFormProps> = ({ onSubmit, isLoadin
     e.preventDefault();
     
     const manualDataString = dataBlocks
-      .map(block => `=== ${block.source} - ${block.timePeriod || 'General'} ===\n${block.kpis}`)
+      .map(block => {
+        const timePeriodLabel = getTimePeriodLabel(
+            language,
+            block.timePeriodSelection,
+            block.customStartDate,
+            block.customEndDate
+        );
+        return `=== ${block.source} - ${timePeriodLabel || 'General'} ===\n${block.kpis}`
+      })
       .join('\n\n');
 
     const apiDataString = apiConnections
@@ -349,10 +369,49 @@ export const DataInputForm: React.FC<DataInputFormProps> = ({ onSubmit, isLoadin
                           </select>
                         </div>
                         <div>
-                          <label htmlFor={`block-time-${block.id}`} className="block text-xs font-medium text-[#6D7475] mb-1" style={{...labelStyle, fontSize: '0.8rem'}}>
-                            {getText(language, 'LABEL_DATA_BLOCK_TIME_PERIOD')}
-                          </label>
-                          <input type="text" id={`block-time-${block.id}`} value={block.timePeriod} onChange={(e) => handleDataBlockChange(block.id, 'timePeriod', e.target.value)} placeholder={PLACEHOLDER_DATA_BLOCK_TIME_PERIOD(language)} disabled={isLoading} className="w-full p-2 bg-white border border-[#ACB4B6] rounded-md shadow-sm focus:ring-[#F54963] focus:border-[#F54963] text-[#0A263B] placeholder-[#878E90] text-sm"/>
+                            <label htmlFor={`block-time-select-${block.id}`} className="block text-xs font-medium text-[#6D7475] mb-1" style={{...labelStyle, fontSize: '0.8rem'}}>
+                                {getText(language, 'LABEL_DATA_BLOCK_TIME_PERIOD')}
+                            </label>
+                            <select
+                                id={`block-time-select-${block.id}`}
+                                value={block.timePeriodSelection}
+                                onChange={(e) => handleDataBlockChange(block.id, 'timePeriodSelection', e.target.value)}
+                                disabled={isLoading}
+                                className="w-full p-2 bg-white border border-[#ACB4B6] rounded-md shadow-sm focus:ring-[#F54963] focus:border-[#F54963] text-[#0A263B] text-sm"
+                            >
+                                {timePeriodOptions.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+
+                            {block.timePeriodSelection === TimePeriod.CUSTOM && (
+                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                    <div>
+                                        <label htmlFor={`block-start-date-${block.id}`} className="sr-only">Start Date</label>
+                                        <input
+                                            type="date"
+                                            id={`block-start-date-${block.id}`}
+                                            value={block.customStartDate}
+                                            onChange={(e) => handleDataBlockChange(block.id, 'customStartDate', e.target.value)}
+                                            disabled={isLoading}
+                                            max={block.customEndDate}
+                                            className="w-full p-2 bg-white border border-[#ACB4B6] rounded-md shadow-sm text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor={`block-end-date-${block.id}`} className="sr-only">End Date</label>
+                                        <input
+                                            type="date"
+                                            id={`block-end-date-${block.id}`}
+                                            value={block.customEndDate}
+                                            onChange={(e) => handleDataBlockChange(block.id, 'customEndDate', e.target.value)}
+                                            disabled={isLoading}
+                                            min={block.customStartDate}
+                                            className="w-full p-2 bg-white border border-[#ACB4B6] rounded-md shadow-sm text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                       </div>
                       <div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StructuredCampaignPlatform, TimePeriod, CampaignMetrics, StructuredInsightRequest, Language, UIStringKeys } from '../types.ts'; 
+import { StructuredCampaignPlatform, TimePeriod, CampaignMetrics, StructuredInsightRequest, Language, UIStringKeys, CampaignGoals } from '../types.ts'; 
 import { STRUCTURED_PLATFORM_OPTIONS, getTimePeriodOptions, getText } from '../constants.ts'; 
 
 interface StructuredDataInputFormProps {
@@ -11,24 +11,27 @@ interface StructuredDataInputFormProps {
 interface CalculatedMetrics {
     ctr: number;
     cpc: number;
-    cpa: number;
-    cvr: number;
 }
 
 const initialMetrics: CampaignMetrics = {
   impressions: 0,
   clicks: 0,
-  conversions: 0,
   cost: 0,
+  primaryMetricName: 'Conversiones',
+  primaryMetricValue: 0,
 };
 
-const initialMetricsInput = { impressions: '', clicks: '', conversions: '', cost: '' };
+const initialMetricsInput = { 
+    impressions: '', 
+    clicks: '', 
+    cost: '', 
+    primaryMetricName: 'Conversiones', 
+    primaryMetricValue: '' 
+};
 
 const initialCalculatedMetrics: CalculatedMetrics = {
     ctr: 0,
     cpc: 0,
-    cpa: 0,
-    cvr: 0,
 };
 
 // Helper to get date string in YYYY-MM-DD format
@@ -67,9 +70,11 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
   const [currentMetrics, setCurrentMetrics] = useState<CampaignMetrics>(initialMetrics);
   const [previousMetrics, setPreviousMetrics] = useState<CampaignMetrics>(initialMetrics);
   
-  // State for string values displayed in input fields to handle locale formatting
+  // State for string values displayed in input fields
   const [currentMetricsInput, setCurrentMetricsInput] = useState(initialMetricsInput);
   const [previousMetricsInput, setPreviousMetricsInput] = useState(initialMetricsInput);
+  const [campaignGoalsInput, setCampaignGoalsInput] = useState({ targetCPA: '', targetCTR: '', targetCVR: '' });
+
 
   const [currentCalculated, setCurrentCalculated] = useState<CalculatedMetrics>(initialCalculatedMetrics);
   const [previousCalculated, setPreviousCalculated] = useState<CalculatedMetrics>(initialCalculatedMetrics);
@@ -97,16 +102,26 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
   };
 
   // Helper to format a number into a locale-specific string for display on blur
-  const formatNumberForDisplay = (num: number, lang: Language, field: keyof CampaignMetrics): string => {
+  const formatNumberForDisplay = (num: number, lang: Language, field: keyof CampaignMetrics | keyof CampaignGoals): string => {
       if (num === 0) return ''; // Show empty string for 0, easier for user to start typing.
+      
+      // Don't format the metric name field
+      if (field === 'primaryMetricName') return String(num);
+
       const locale = lang === Language.ES ? 'es-ES' : 'en-US';
-      const isCost = field === 'cost';
+      const isCost = field === 'cost' || field === 'targetCPA';
       
       const options: Intl.NumberFormatOptions = {
           useGrouping: true,
           minimumFractionDigits: isCost ? 2 : 0,
-          maximumFractionDigits: isCost ? 2 : 0,
+          maximumFractionDigits: 20, // Allow for decimals in metrics like ROAS
       };
+
+      // Remove trailing zeros for non-cost fields if they are integers
+      if (!isCost && num % 1 === 0) {
+          options.maximumFractionDigits = 0;
+      }
+
 
       return new Intl.NumberFormat(locale, options).format(num);
   };
@@ -115,14 +130,11 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
     const calculate = (metrics: CampaignMetrics): CalculatedMetrics => {
         const clicks = metrics.clicks || 0;
         const impressions = metrics.impressions || 0;
-        const conversions = metrics.conversions || 0;
         const cost = metrics.cost || 0;
 
         return {
             ctr: impressions > 0 ? (clicks / impressions) : 0,
             cpc: clicks > 0 ? (cost / clicks) : 0,
-            cpa: conversions > 0 ? (cost / conversions) : 0,
-            cvr: clicks > 0 ? (conversions / clicks) : 0,
         };
     };
 
@@ -189,14 +201,16 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
           setter({
               impressions: formatNumberForDisplay(metrics.impressions, language, 'impressions'),
               clicks: formatNumberForDisplay(metrics.clicks, language, 'clicks'),
-              conversions: formatNumberForDisplay(metrics.conversions, language, 'conversions'),
               cost: formatNumberForDisplay(metrics.cost, language, 'cost'),
+              primaryMetricName: metrics.primaryMetricName,
+              primaryMetricValue: formatNumberForDisplay(metrics.primaryMetricValue, language, 'primaryMetricValue'),
           });
       };
       reformatInputs(currentMetrics, setCurrentMetricsInput);
       if (compare) {
           reformatInputs(previousMetrics, setPreviousMetricsInput);
       }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]);
 
 
@@ -208,15 +222,27 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
       const stringSetter = period === 'current' ? setCurrentMetricsInput : setPreviousMetricsInput;
       stringSetter(prev => ({ ...prev, [key]: value }));
 
-      // Parse the input string to a number and update the numeric state used for calculations
-      const parsedValue = parseLocaleNumber(value, language);
       const numberSetter = period === 'current' ? setCurrentMetrics : setPreviousMetrics;
-      numberSetter(prev => ({ ...prev, [key]: parsedValue >= 0 ? parsedValue : 0 }));
+
+      if (key === 'primaryMetricName') {
+         numberSetter(prev => ({...prev, primaryMetricName: value}));
+      } else {
+        // Parse the input string to a number and update the numeric state used for calculations
+        const parsedValue = parseLocaleNumber(value, language);
+        numberSetter(prev => ({ ...prev, [key]: parsedValue >= 0 ? parsedValue : 0 }));
+      }
+  };
+  
+  const handleGoalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCampaignGoalsInput(prev => ({ ...prev, [name]: value }));
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>, period: 'current' | 'previous') => {
       const { name } = e.target;
       const key = name as keyof CampaignMetrics;
+
+      if (key === 'primaryMetricName') return; // Don't format the name field
       
       // Get the true numeric value from the number state
       const metrics = period === 'current' ? currentMetrics : previousMetrics;
@@ -236,10 +262,17 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
       return; // Do not submit if there are validation errors
     }
     
+    const goals: CampaignGoals = {
+        targetCPA: campaignGoalsInput.targetCPA ? parseLocaleNumber(campaignGoalsInput.targetCPA, language) : undefined,
+        targetCTR: campaignGoalsInput.targetCTR ? parseLocaleNumber(campaignGoalsInput.targetCTR, language) / 100 : undefined,
+        targetCVR: campaignGoalsInput.targetCVR ? parseLocaleNumber(campaignGoalsInput.targetCVR, language) / 100 : undefined,
+    };
+
     let submissionRequest: StructuredInsightRequest = {
       platform,
       timePeriod,
       currentMetrics,
+      campaignGoals: Object.values(goals).some(v => v !== undefined) ? goals : undefined,
     };
 
     if (timePeriod === TimePeriod.CUSTOM) {
@@ -248,7 +281,7 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
     }
 
     if (compare) {
-      const allPreviousFieldsZero = Object.values(previousMetrics).every(v => v === 0);
+      const allPreviousFieldsZero = previousMetrics.impressions === 0 && previousMetrics.clicks === 0 && previousMetrics.cost === 0 && previousMetrics.primaryMetricValue === 0;
       if(allPreviousFieldsZero) {
         setErrors(prev => ({...prev, previousPeriod: getText(language, 'ALERT_PREVIOUS_METRICS_INCOMPLETE')}));
         return;
@@ -262,7 +295,6 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
   const metricInputFields: Array<{ name: keyof CampaignMetrics; labelKey: UIStringKeys; placeholder: string }> = [
     { name: 'impressions', labelKey: 'LABEL_IMPRESSIONS', placeholder: 'e.g., 100000' },
     { name: 'clicks', labelKey: 'LABEL_CLICKS', placeholder: 'e.g., 2000' },
-    { name: 'conversions', labelKey: 'LABEL_CONVERSIONS', placeholder: 'e.g., 100' },
     { name: 'cost', labelKey: 'LABEL_COST', placeholder: language === Language.ES ? 'e.g., 500,00' : 'e.g., 500.00' },
   ];
   
@@ -278,7 +310,7 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
       }, {} as {[key: string]: string});
 
     return (
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
         {metricInputFields.map(field => (
           <div key={`${period}-${field.name}`}>
             <label htmlFor={`${period}-${field.name}`} className="block text-xs font-medium text-[#6D7475] mb-1">
@@ -289,7 +321,7 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
               inputMode="decimal"
               id={`${period}-${field.name}`}
               name={field.name}
-              value={metricsInput[field.name]}
+              value={metricsInput[field.name as keyof typeof metricsInput]}
               onChange={(e) => handleInputChange(e, period)}
               onBlur={(e) => handleBlur(e, period)}
               onFocus={(e) => e.target.select()}
@@ -299,6 +331,42 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
             />
           </div>
         ))}
+        {/* Custom fields for Primary Metric */}
+        <div className="col-span-2 grid grid-cols-2 gap-x-4">
+            <div>
+                 <label htmlFor={`${period}-primaryMetricName`} className="block text-xs font-medium text-[#6D7475] mb-1">
+                    {getText(language, 'LABEL_PRIMARY_METRIC_NAME')}
+                </label>
+                <input
+                    type="text"
+                    id={`${period}-primaryMetricName`}
+                    name="primaryMetricName"
+                    value={metricsInput.primaryMetricName}
+                    onChange={(e) => handleInputChange(e, period)}
+                    placeholder={language === Language.ES ? 'ej., Conversiones' : 'e.g., Conversions'}
+                    className="w-full p-2 bg-white border border-[#ACB4B6] rounded-md shadow-sm text-sm"
+                    disabled={isLoading}
+                />
+            </div>
+            <div>
+                 <label htmlFor={`${period}-primaryMetricValue`} className="block text-xs font-medium text-[#6D7475] mb-1">
+                    {getText(language, 'LABEL_PRIMARY_METRIC_VALUE')}
+                </label>
+                <input
+                    type="text"
+                    inputMode="decimal"
+                    id={`${period}-primaryMetricValue`}
+                    name="primaryMetricValue"
+                    value={metricsInput.primaryMetricValue}
+                    onChange={(e) => handleInputChange(e, period)}
+                    onBlur={(e) => handleBlur(e, period)}
+                    onFocus={(e) => e.target.select()}
+                    placeholder="e.g., 100"
+                    className="w-full p-2 bg-white border border-[#ACB4B6] rounded-md shadow-sm text-sm"
+                    disabled={isLoading}
+                />
+            </div>
+        </div>
          {Object.values(periodErrors).length > 0 && <p className="col-span-2 text-xs text-red-600 mt-1">{Object.values(periodErrors)[0]}</p>}
       </div>
     );
@@ -312,8 +380,6 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
     const metrics = [
         { label: 'CTR', value: formatPercent(calculated.ctr), compareValue: compareCalculated?.ctr, isPositiveGood: true },
         { label: 'CPC', value: formatCurrency(calculated.cpc), compareValue: compareCalculated?.cpc, isPositiveGood: false },
-        { label: 'CPA', value: formatCurrency(calculated.cpa), compareValue: compareCalculated?.cpa, isPositiveGood: false },
-        { label: 'CVR', value: formatPercent(calculated.cvr), compareValue: compareCalculated?.cvr, isPositiveGood: true },
     ];
 
     return (
@@ -391,6 +457,26 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
             {errors.dateRange && <p className="text-xs text-red-600 mt-2">{errors.dateRange}</p>}
         </div>
       )}
+
+      <fieldset className="space-y-2 p-3 border border-gray-200 rounded-lg bg-gray-50/70">
+            <legend className="text-md font-medium text-[#0A263B] px-2 text-sm" style={labelStyle}>
+                {getText(language, 'LABEL_CAMPAIGN_GOALS_SECTION')}
+            </legend>
+            <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+                <div>
+                    <label htmlFor="targetCPA" className="block text-xs font-medium text-[#6D7475] mb-1">{getText(language, 'LABEL_TARGET_CPA')}</label>
+                    <input type="text" inputMode="decimal" id="targetCPA" name="targetCPA" value={campaignGoalsInput.targetCPA} onChange={handleGoalChange} disabled={isLoading} placeholder={language === Language.ES ? 'ej. 50,00' : 'e.g. 50.00'} className="w-full p-2 bg-white border border-[#ACB4B6] rounded-md shadow-sm text-sm" />
+                </div>
+                 <div>
+                    <label htmlFor="targetCTR" className="block text-xs font-medium text-[#6D7475] mb-1">{getText(language, 'LABEL_TARGET_CTR')}</label>
+                    <input type="text" inputMode="decimal" id="targetCTR" name="targetCTR" value={campaignGoalsInput.targetCTR} onChange={handleGoalChange} disabled={isLoading} placeholder={language === Language.ES ? 'ej. 2,5' : 'e.g. 2.5'} className="w-full p-2 bg-white border border-[#ACB4B6] rounded-md shadow-sm text-sm" />
+                </div>
+                 <div>
+                    <label htmlFor="targetCVR" className="block text-xs font-medium text-[#6D7475] mb-1">{getText(language, 'LABEL_TARGET_CVR')}</label>
+                    <input type="text" inputMode="decimal" id="targetCVR" name="targetCVR" value={campaignGoalsInput.targetCVR} onChange={handleGoalChange} disabled={isLoading} placeholder={language === Language.ES ? 'ej. 5' : 'e.g. 5'} className="w-full p-2 bg-white border border-[#ACB4B6] rounded-md shadow-sm text-sm" />
+                </div>
+            </div>
+      </fieldset>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <fieldset className="space-y-2 p-3 border border-gray-200 rounded-lg">
