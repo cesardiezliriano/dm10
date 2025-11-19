@@ -1,3 +1,4 @@
+
 import { DataSource, StructuredCampaignPlatform, TimePeriod, Language, SlideType, KpiItem, PresentationData, SlideContent, KpiHighlightSection, BrandStyle, MotortecReportContent, HelpTopic, UIStringKeys, CampaignMetrics, CampaignGoals } from './types.ts';
 
 // --- Critical App Configuration ---
@@ -297,8 +298,8 @@ const UI_STRINGS: Record<UIStringKeys, Record<Language, string> | Partial<Record
     [Language.ES]: "Error en Llamada a API Gemini: La API Key no estaba disponible al intentar llamar a la API de Gemini. Por favor, asegúrate de que la variable de entorno API_KEY esté configurada."
   },
   ERROR_API_INVALID_KEY: {
-    [Language.EN]: "Gemini API Error: API key not valid. Please check your API Key configuration.",
-    [Language.ES]: "Error de API Gemini: API key no válida. Por favor, revisa la configuración de tu API Key."
+    [Language.EN]: "Gemini API Key Error. Please check that your API_KEY environment variable is set. This is required even for manual data analysis.",
+    [Language.ES]: "Error de API Key de Gemini. Por favor, verifica que tu variable de entorno API_KEY esté configurada. Esto es necesario incluso para el análisis de datos manuales."
   },
   ERROR_GEMINI_GENERIC: {
     [Language.EN]: "Gemini API Error: An unexpected error occurred while communicating with the AI model. Details: %s",

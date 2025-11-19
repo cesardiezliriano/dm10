@@ -79,10 +79,12 @@ const App: React.FC = () => {
 
     resetStateForNewRequest();
 
-    const enableSearch = request.selectedDataSources.some(ds =>
-      [DataSource.GA4, DataSource.GOOGLE_ADS, DataSource.META_ADS].includes(ds)
-    );
-    console.log("App: Search grounding enabled for aggregated insight:", enableSearch);
+    // FIX: Disable automatic search grounding. 
+    // Previous logic enabled it if 'Google Ads' or 'Meta Ads' was selected, even for manual data.
+    // This caused API errors if the key didn't support Search Grounding.
+    // We set this to false to ensure manual data analysis works robustly.
+    const enableSearch = false; 
+    console.log("App: Search grounding status:", enableSearch);
 
     try {
       const geminiResponse: GenerateContentGeminiResponse = await generateInsightWithGemini(
