@@ -1,3 +1,4 @@
+
 export enum DataSource {
   GOOGLE_ADS = "Google Ads",
   META_ADS = "Meta Ads",
@@ -17,11 +18,11 @@ export interface UploadedImage {
 export enum BrandStyle {
   LLYC_DEFAULT = "LLYC Default",
   IFEMA_MADRID = "IFEMA MADRID",
-  MOTORTEC_REPORT_TEMPLATE = "Motortec Report Template (IFEMA)" // New Template Style
+  MOTORTEC_REPORT_TEMPLATE = "Motortec Report Template (IFEMA)"
 }
 
 export interface AggregatedDataBlock {
-  id: string; // For React keys
+  id: string; 
   source: DataSource;
   timePeriodSelection: TimePeriod;
   customStartDate?: string;
@@ -31,7 +32,7 @@ export interface AggregatedDataBlock {
 
 export interface ApiConnection {
   source: DataSource;
-  data: any; // Parsed JSON data from the API
+  data: any; 
 }
 
 export interface InsightRequest {
@@ -68,7 +69,6 @@ export interface GenerateContentGeminiResponse {
   candidates?: Candidate[];
 }
 
-// New types for Structured Campaign Data Analysis
 export enum StructuredCampaignPlatform {
   GOOGLE_ADS = "Google Ads",
   META_ADS = "Meta Ads",
@@ -86,27 +86,26 @@ export interface CampaignMetrics {
   impressions: number;
   clicks: number;
   cost: number;
-  primaryMetricName: string; // e.g., "Conversions", "ROAS", "CPA"
+  primaryMetricName: string; 
   primaryMetricValue: number;
 }
 
 export interface CampaignGoals {
   targetCPA?: number;
-  targetCTR?: number; // Stored as decimal, e.g., 0.02 for 2%
-  targetCVR?: number; // Stored as decimal, e.g., 0.05 for 5%
+  targetCTR?: number; 
+  targetCVR?: number; 
 }
 
 export interface StructuredInsightRequest {
   platform: StructuredCampaignPlatform;
   timePeriod: TimePeriod;
   currentMetrics: CampaignMetrics;
-  previousMetrics?: CampaignMetrics; // Optional, for comparison
-  campaignGoals?: CampaignGoals; // Optional, for performance evaluation
-  startDate?: string; // e.g., "2024-05-01"
-  endDate?: string;   // e.g., "2024-05-23"
+  previousMetrics?: CampaignMetrics; 
+  campaignGoals?: CampaignGoals; 
+  startDate?: string; 
+  endDate?: string;   
 }
 
-// Language Selection
 export enum Language {
   EN = "English",
   ES = "Español",
@@ -134,11 +133,10 @@ export enum SlideType {
   SECTION_DIVIDER_SLIDE = "sectionDividerSlide", 
   EXECUTIVE_SUMMARY = "executiveSummary",     
   KPI_OVERVIEW = "kpiOverview",               
-  KPI_HIGHLIGHTS = "kpiHighlights",           
+  KPI_GRID = "kpiGrid", // NEW: Visual Grid Layout
+  TWO_COLUMN = "twoColumn", // NEW: Two Column Text Layout
   DETAILED_ANALYSIS = "detailedAnalysis",     
-  MULTI_COLUMN_ANALYSIS = "multiColumnAnalysis", 
   CONCLUSIONS_RECOMMENDATIONS = "conclusionsRecommendations", 
-  IMAGE_WITH_CAPTION = "imageWithCaption",    
   CREATIVE_ANALYSIS = "creativeAnalysis",       
   ANNEX_SLIDE = "annexSlide",                 
   THANK_YOU_SLIDE = "thankYouSlide"           
@@ -155,12 +153,23 @@ export interface SlideContent {
   subtitle?: string;                          
   agendaPoints?: string[];                    
   executiveSummaryPoints?: string[];          
+  
+  // For KPI Grid
   kpis?: KpiItem[];                           
-  kpiNotes?: string;                          
+  
+  // For KPI Highlights (Legacy list style)
   kpiHighlightSections?: KpiHighlightSection[];
+  
+  // For standard analysis
   analysisTitle?: string;                     
-  analysisPoints?: string[];                  
-  multiColumnSections?: Array<{ title?: string; points: string[] }>; 
+  analysisPoints?: string[];
+  
+  // For Two Column Layout
+  leftColumnTitle?: string;
+  leftColumnPoints?: string[];
+  rightColumnTitle?: string;
+  rightColumnPoints?: string[];
+
   conclusions?: string[];                     
   recommendations?: string[];                 
   imageIdentifier?: string;                   
@@ -170,78 +179,77 @@ export interface SlideContent {
 
 // --- Types for Motortec Report Template ---
 export interface MotortecSlide1Title {
-  pageNumber?: string; // "01"
-  reportName?: string; // "MOTORTEC"
-  eventDate?: string; // "Abril 2025"
-  fixedHeaderText?: string; // "Cierre MOTORTEC|"
+  pageNumber?: string; 
+  reportName?: string; 
+  eventDate?: string; 
+  fixedHeaderText?: string; 
 }
 
 export interface MotortecSlide2Agenda {
-  pageNumber?: string; // "02"
-  pageTitle?: string; // "Radiografía de campaña"
-  agendaItems?: string[]; // ["Objetivos", "Resultados", ...]
+  pageNumber?: string; 
+  pageTitle?: string; 
+  agendaItems?: string[]; 
 }
 
 export interface MotortecObjective {
-  title: string; // "OBJETIVO 1"
+  title: string; 
   description: string; 
 }
 export interface MotortecSlide3ObjectivesResults {
-  pageNumber?: string; // "03"
-  fixedHeaderText?: string; // "Cierre Motrotec |"
-  mainTitlePart1?: string; // "Punto de partida,"
-  mainTitlePart2?: string; // "Visión de llegada" (yellow)
-  objectives?: MotortecObjective[]; // Array of 2 objectives
-  resultsTitle?: string; // "RESULTADOS" (yellow)
+  pageNumber?: string; 
+  fixedHeaderText?: string; 
+  mainTitlePart1?: string; 
+  mainTitlePart2?: string; 
+  objectives?: MotortecObjective[]; 
+  resultsTitle?: string; 
   resultsPoints?: string[];
 }
 
 export interface MotortecKpiValue { label: string; value: string; }
-export interface MotortecDonutChartItem { name: string; value: string; // e.g., "64%"
-}
+export interface MotortecDonutChartItem { name: string; value: string; }
 export interface MotortecSlide4KPICharts {
-  pageNumber?: string; // "04"
-  pageTitle?: string; // "La venta es trabajo en equipo"
-  headerKpis?: MotortecKpiValue[]; // ["Inversión", "Total conv", ...]
-  mvpCampaignTitle?: string; // "Los MVPs de la campaña"
+  pageNumber?: string; 
+  pageTitle?: string; 
+  headerKpis?: MotortecKpiValue[]; 
+  mvpCampaignTitle?: string; 
   mvpCampaignQuestion?: string;
-  mvpCampaignCharts?: MotortecDonutChartItem[]; // [GADS, DV360, META]
-  invisibleNetworkTitle?: string; // "La red invisible de la conversión"
+  mvpCampaignCharts?: MotortecDonutChartItem[]; 
+  invisibleNetworkTitle?: string; 
   invisibleNetworkQuestion?: string;
-  invisibleNetworkCharts?: MotortecDonutChartItem[]; // [GADS, DV360, META, CRITEO, MEDIOS, BING]
+  invisibleNetworkCharts?: MotortecDonutChartItem[]; 
   cmSobreCampañaText?: string;
 }
 
 export interface MotortecSlide5ComparativeCharts {
-    pageNumber?: string; // "05"
-    pageTitle?: string; // "El momento que dijeron SÍ"
-    totalConversionsText?: string; // "8.857 CONVERSIONES EN MOTORTEC"
-    loNuestroTitle?: string; // "Lo Nuestro."
-    loNuestroCampaignName?: string; // "Campaña de Motortec"
+    pageNumber?: string; 
+    pageTitle?: string; 
+    totalConversionsText?: string; 
+    loNuestroTitle?: string; 
+    loNuestroCampaignName?: string; 
     loNuestroQuestion?: string;
-    loNuestroCharts?: MotortecDonutChartItem[]; // [motortec, fruitattraction, sicur]
-    loDeTodosTitle?: string; // "Lo de todos."
-    loDeTodosCampaignName?: string; // "Usuarios registrados en Motortec"
+    loNuestroCharts?: MotortecDonutChartItem[]; 
+    loDeTodosTitle?: string; 
+    loDeTodosCampaignName?: string; 
     loDeTodosQuestion?: string;
-    loDeTodosCharts?: MotortecDonutChartItem[]; // [motortec, semana-educación, Almoneda]
+    loDeTodosCharts?: MotortecDonutChartItem[]; 
 }
 
 export interface MotortecSlide6PlatformDivider {
-    pageNumber?: string; // "06"
-    fixedHeaderText?: string; // "Cierre Motortec | Abril 2025"
-    pageTitle?: string; // "Plataforma"
-    analysisPoints?: string[]; // ["1. Analisis del target", ...]
+    pageNumber?: string; 
+    fixedHeaderText?: string; 
+    pageTitle?: string; 
+    analysisPoints?: string[]; 
 }
 
 export interface MotortecDemographicChart {
-    chartTitle: string; // "SEXO", "EDAD", "UBICACIÓN"
-    items: Array<{label: string; value?: number; color?: string}>; // AI should provide items, color can be mapped later
+    chartTitle: string; 
+    items: Array<{label: string; value?: number; color?: string}>; 
 }
 export interface MotortecSlide7DemographicsCreative {
-    pageNumber?: string; // "07"
-    mainTitle?: string; // "A quién le hablamos"
-    subTitle?: string; // "Por qué nos escuchó"
-    creativeImageIdentifier?: string; // Filename of the Meta ad creative
+    pageNumber?: string; 
+    mainTitle?: string; 
+    subTitle?: string; 
+    creativeImageIdentifier?: string; 
     charts?: MotortecDemographicChart[];
 }
 
@@ -249,43 +257,39 @@ export interface MotortecGlobalResultsKpi { kpiName: string; value: string; chan
 export interface MotortecRegionalTable { regionName: string; kpis: Array<{name: string; value: string;}> }
 export interface MotortecChannelsTableItem { channelName: string; kpis: Array<{name: string; value: string;}> }
 export interface MotortecSlide8Consideracion {
-    pageNumber?: string; // "08"
-    pageTitle?: string; // "Consideración: Del recuerdo al interés"
+    pageNumber?: string; 
+    pageTitle?: string; 
     globalResults?: {
-        mainKpis: MotortecGlobalResultsKpi[]; // [Impresiones, Clics, CTR]
-        regionalTables: MotortecRegionalTable[]; // [Nacional, Portugal]
+        mainKpis: MotortecGlobalResultsKpi[]; 
+        regionalTables: MotortecRegionalTable[]; 
     };
     channelsTable?: {
-        headers: string[]; // ["", "Inversión", "Imp", "CTR"]
-        items: MotortecChannelsTableItem[]; // [DV360, Deal DV, Meta, Dgen]
+        headers: string[]; 
+        items: MotortecChannelsTableItem[]; 
     };
     insightsPoints?: string[];
 }
 
-export interface MotortecSlide9Conversion extends MotortecSlide8Consideracion { // Similar structure to slide 8
-    // pageTitle is different: "Conversión: Donde el click se convierte en acción"
-    // globalResults.mainKpis: [Conversiones, CPA, CR]
-    // channelsTable.items: [PMAX, SEARCH, Meta, DV360]
-}
+export interface MotortecSlide9Conversion extends MotortecSlide8Consideracion { }
 
 export interface MotortecCreativeGalleryItem {
-    imageIdentifier: string; // Filename
-    registros?: string; // e.g. "1.504"
-    ctr?: string; // e.g. "0,57%"
-    inversionPercent?: string; // e.g. "54%"
+    imageIdentifier: string; 
+    registros?: string; 
+    ctr?: string; 
+    inversionPercent?: string; 
 }
 export interface MotortecSlide10CreativeAnalysisMeta {
-    pageTitle?: string; // "Análisis de creatividade s:Meta"
+    pageTitle?: string; 
     creatives: MotortecCreativeGalleryItem[];
     analysisPoints: string[];
 }
 
 export interface MotortecOrganicObjective { title: string; kpiPoints: string[]; }
 export interface MotortecSlide11Organico {
-    pageNumber?: string; // "10" (but 11th slide)
-    pageTitle?: string; // "Orgánico: Donde el contenido cobra fuerza."
-    reelsImageIdentifier?: string; // Filename
-    objectives: MotortecOrganicObjective[]; // [Aumentar seguidores IG, Generar engagement]
+    pageNumber?: string; 
+    pageTitle?: string; 
+    reelsImageIdentifier?: string; 
+    objectives: MotortecOrganicObjective[]; 
     globalSummaryPoints?: string[];
 }
 
@@ -301,7 +305,6 @@ export interface MotortecReportContent {
     slide9_Conversion?: MotortecSlide9Conversion;
     slide10_CreativeAnalysisMeta?: MotortecSlide10CreativeAnalysisMeta;
     slide11_Organico?: MotortecSlide11Organico;
-    // Slides 12+ (Anexo, Estrategia Global) are very data-heavy and might be too complex for initial AI templating
 }
 
 
@@ -311,11 +314,10 @@ export interface PresentationData {
   period?: string;                            
   language: Language;                         
   brandStyle: BrandStyle;                     
-  slides?: SlideContent[]; // For LLYC_DEFAULT and general IFEMA_MADRID styles
-  motortecReportContent?: MotortecReportContent; // For MOTORTEC_REPORT_TEMPLATE
+  slides?: SlideContent[]; 
+  motortecReportContent?: MotortecReportContent; 
 }
 
-// --- UI String Keys ---
 export type UIStringKeys =
   | "APP_TITLE"
   | "APP_SUBTITLE"
@@ -468,8 +470,6 @@ export type UIStringKeys =
   | "TIME_PERIOD_90_DAYS"
   | "TIME_PERIOD_CUSTOM";
 
-
-// --- Help System Types ---
 export interface HelpTopic {
   id: string;
   questionKey: UIStringKeys; 
