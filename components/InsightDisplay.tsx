@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { marked, Renderer } from 'marked'; 
 import { GroundingChunk, Language } from '../types.ts'; 
@@ -119,6 +120,12 @@ const EmailIcon = () => (
     </svg>
 );
 
+const PresentationIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
+    </svg>
+);
+
 
 export const InsightDisplay: React.FC<InsightDisplayProps> = ({ 
     insight, 
@@ -232,6 +239,28 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
                   {copyStatusMessage}
                 </span>
               )}
+              
+              {/* NEW: Top Action Button for Presentation Generation */}
+              {currentMode === 'aggregated' && !isEffectivelyEmpty && (
+                <button
+                    type="button"
+                    onClick={onGeneratePresentation}
+                    title={getText(language, 'BUTTON_GENERATE_PPT')}
+                    aria-label={getText(language, 'BUTTON_GENERATE_PPT')}
+                    disabled={isGeneratingPresentation}
+                    className="p-1.5 bg-[#0A263B] text-white rounded-md hover:bg-[#0E2A47] focus:outline-none focus:ring-2 focus:ring-[#0A263B] focus:ring-offset-1 focus:ring-offset-llyc-azul-oscuro/5 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {isGeneratingPresentation ? (
+                         <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    ) : (
+                        <PresentationIcon />
+                    )}
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={handleCopyInsight}
@@ -299,32 +328,35 @@ export const InsightDisplay: React.FC<InsightDisplayProps> = ({
         </div>
 
         {currentMode === 'aggregated' && (
-            <div className="mt-6 p-4 bg-gray-100 border border-gray-200 rounded-lg">
-                <button
-                    type="button"
-                    onClick={onGeneratePresentation}
-                    disabled={isGeneratingPresentation || isEffectivelyEmpty}
-                    className="w-full flex justify-center items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#0A263B] hover:bg-[#0E2A47] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-[#0A263B] disabled:opacity-60 disabled:cursor-not-allowed transition duration-150 ease-in-out"
-                    style={{fontFamily: "'Montserrat', sans-serif", fontWeight: 600}}
-                >
-                    {isGeneratingPresentation ? (
-                    <>
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        {getText(language, 'LABEL_GENERATING_PPT')}
-                    </>
-                    ) : (
-                    getText(language, 'BUTTON_GENERATE_PPT')
+            <>
+                {/* We keep the large bottom button as a secondary CTA, but errors are shown here */}
+                <div className="mt-6 p-4 bg-gray-100 border border-gray-200 rounded-lg">
+                    <button
+                        type="button"
+                        onClick={onGeneratePresentation}
+                        disabled={isGeneratingPresentation || isEffectivelyEmpty}
+                        className="w-full flex justify-center items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#0A263B] hover:bg-[#0E2A47] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-[#0A263B] disabled:opacity-60 disabled:cursor-not-allowed transition duration-150 ease-in-out"
+                        style={{fontFamily: "'Montserrat', sans-serif", fontWeight: 600}}
+                    >
+                        {isGeneratingPresentation ? (
+                        <>
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            {getText(language, 'LABEL_GENERATING_PPT')}
+                        </>
+                        ) : (
+                        getText(language, 'BUTTON_GENERATE_PPT')
+                        )}
+                    </button>
+                    {presentationError && (
+                        <div className="mt-4">
+                            <ErrorMessage message={presentationError} language={language} />
+                        </div>
                     )}
-                </button>
-                {presentationError && (
-                    <div className="mt-4">
-                        <ErrorMessage message={presentationError} language={language} />
-                    </div>
-                )}
-            </div>
+                </div>
+            </>
         )}
     </div>
   </React.Fragment>

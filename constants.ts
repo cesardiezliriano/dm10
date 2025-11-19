@@ -730,7 +730,6 @@ export const PROMPT_TEMPLATE_FOR_PPT_JSON = (
   if (brandStyle === BrandStyle.MOTORTEC_REPORT_TEMPLATE) {
     // ... (Motortec logic remains same as it's a fixed template) ...
     const motortecExampleJson = getMotortecTemplateExampleJson(language, exampleClientName, brandStyle);
-    // (Code shortened for brevity, logic is identical to previous, just context awareness updated)
     return `
 You are an expert AI assistant tasked with transforming a textual data analysis report into a structured JSON for the Motortec fixed template.
 **Output JSON Structure Requirements:**
@@ -752,7 +751,11 @@ Text Insight: ${textInsight}
       { 
         type: SlideType.KPI_GRID, // NEW SLIDE TYPE
         title: "Performance Overview", 
-        kpis: [exampleKpiItem, exampleKpiItem, exampleKpiItem] 
+        kpis: [
+          { name: "Total Spend", value: "$12.5k", change: "+5%", changeType: "positive" },
+          { name: "Conversions", value: "450", change: "+12%", changeType: "positive" },
+          { name: "CPA", value: "$27.8", change: "-3%", changeType: "positive" }
+        ]
       },
       {
         type: SlideType.TWO_COLUMN, // NEW SLIDE TYPE
@@ -762,6 +765,7 @@ Text Insight: ${textInsight}
         rightColumnTitle: "Meta Ads",
         rightColumnPoints: ["Broad reach", "Good for awareness"]
       },
+      { type: SlideType.SECTION_DIVIDER_SLIDE, title: "Analysis Deep Dive", subtitle: "Detailed Breakdown" },
       { type: SlideType.DETAILED_ANALYSIS, title: "Deep Dive", analysisPoints: ["Point A", "Point B"] },
       { type: SlideType.CONCLUSIONS_RECOMMENDATIONS, title: "Conclusions", conclusions: ["C1"], recommendations: ["R1"] }
     ];
@@ -780,12 +784,12 @@ Your goal is to create a **visually structured, professional presentation** JSON
 The output must be a valid JSON object matching the 'PresentationData' interface.
 
 **DESIGN INSTRUCTIONS (CRITICAL):**
-- **Avoid walls of text.** Use specific slide types to visualize data better.
-- **Use 'KPI_GRID'** type when you have 3-8 key numeric metrics (Impressions, CTR, CPC, etc.) to display. This renders them as visual cards.
-- **Use 'TWO_COLUMN'** type when comparing two things (e.g., Platform A vs Platform B, Current Period vs Previous Period, Pros vs Cons).
+- **Avoid walls of text.** 
+- **MANDATORY:** Use 'KPI_GRID' type for any section presenting 3 or more numeric metrics (e.g. Impressions, CTR, CPC, Conversions). These render as visual cards.
+- **MANDATORY:** Use 'TWO_COLUMN' type when comparing two distinct things (e.g., Platform A vs Platform B, Current Period vs Previous Period, Pros vs Cons).
 - **Use 'SECTION_DIVIDER_SLIDE'** to break up major sections of the report.
 - **Use 'EXECUTIVE_SUMMARY'** at the start for high-level takeaways.
-- **Use 'DETAILED_ANALYSIS'** for lists of observations that don't fit the other formats.
+- **Use 'DETAILED_ANALYSIS'** only for simple lists of observations that don't fit the Grid or Column formats.
 - **Use 'CONCLUSIONS_RECOMMENDATIONS'** at the end.
 
 **Context Provided by User:**

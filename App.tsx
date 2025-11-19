@@ -258,13 +258,13 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-transparent p-4 sm:p-8 flex flex-col items-center" style={{ fontFamily: "'Open Sans', sans-serif" }}>
       {isApiKeyMissingAtLoad && !error && ( // Only show banner if no other error is already displayed
-        <div className="w-full max-w-5xl p-4 mb-6 bg-[#F54963] border border-[#F54963]/80 text-white rounded-lg shadow-lg text-sm">
+        <div className="w-full max-w-[95%] 2xl:max-w-7xl p-4 mb-6 bg-[#F54963] border border-[#F54963]/80 text-white rounded-lg shadow-lg text-sm">
           <strong className="font-semibold block mb-1" style={{fontFamily: "'Montserrat', sans-serif"}}>{getText(selectedLanguage, 'API_KEY_MISSING_BANNER_TITLE')}</strong>
           <p>{getText(selectedLanguage, 'API_KEY_MISSING_BANNER_MESSAGE')}</p>
         </div>
       )}
       
-      <header className="w-full max-w-5xl mb-6">
+      <header className="w-full max-w-[95%] 2xl:max-w-7xl mb-6">
         <div className="flex justify-between items-center py-2">
             <div className="text-3xl font-extrabold text-[#F54963]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
                 LLYC
@@ -285,7 +285,7 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <div className="relative w-full max-w-5xl">
+      <div className="relative w-full max-w-[95%] 2xl:max-w-7xl">
         <main className="w-full bg-[#FFFFFF] shadow-2xl rounded-xl p-6 sm:p-8 border border-[#DDDDDD]">
             <div className="mb-6 flex border-b border-[#ACB4B6]">
             <button
@@ -308,12 +308,12 @@ const App: React.FC = () => {
             </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-            <div className="md:pr-3">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+            <div className="lg:col-span-5 xl:col-span-4 md:pr-3">
                 {renderForm()}
             </div>
             
-            <div className="md:pl-3 md:border-l md:border-[#ACB4B6] flex flex-col">
+            <div className="lg:col-span-7 xl:col-span-8 md:pl-3 md:border-l md:border-[#ACB4B6] flex flex-col">
                 <h2 className="text-2xl font-semibold mb-4 text-[#0A263B]" style={{fontFamily: "'Montserrat', sans-serif"}}>
                 {currentMode === "aggregated" ? getText(selectedLanguage, 'SECTION_TITLE_GENERATED_INSIGHTS') : getText(selectedLanguage, 'SECTION_TITLE_CAMPAIGN_SUMMARY')}
                 </h2>
@@ -345,7 +345,7 @@ const App: React.FC = () => {
       </div>
 
 
-      <footer className="w-full max-w-5xl mt-12 text-center text-[#6D7475] text-xs">
+      <footer className="w-full max-w-[95%] 2xl:max-w-7xl mt-12 text-center text-[#6D7475] text-xs">
         <p>&copy; {new Date().getFullYear()} {getText(selectedLanguage, 'FOOTER_TEXT')}</p>
       </footer>
       
