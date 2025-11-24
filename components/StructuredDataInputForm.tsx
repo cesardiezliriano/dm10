@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { StructuredCampaignPlatform, TimePeriod, CampaignMetrics, StructuredInsightRequest, Language, UIStringKeys, CampaignGoals } from '../types.ts'; 
 import { STRUCTURED_PLATFORM_OPTIONS, getTimePeriodOptions, getText } from '../constants.ts'; 
@@ -6,6 +7,7 @@ interface StructuredDataInputFormProps {
   onSubmit: (request: StructuredInsightRequest) => void; 
   isLoading: boolean;
   language: Language; 
+  prefillData?: StructuredInsightRequest | null; // Added prop
 }
 
 interface CalculatedMetrics {
@@ -59,7 +61,7 @@ const TrendIndicator: React.FC<{ change: number, isPositiveGood: boolean }> = ({
 };
 
 
-export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = ({ onSubmit, isLoading, language }) => {
+export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = ({ onSubmit, isLoading, language, prefillData }) => {
   const [platform, setPlatform] = useState<StructuredCampaignPlatform>(StructuredCampaignPlatform.GOOGLE_ADS);
   const [timePeriod, setTimePeriod] = useState<TimePeriod>(TimePeriod.DAYS_30);
   
@@ -125,6 +127,35 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
 
       return new Intl.NumberFormat(locale, options).format(num);
   };
+
+    // Restore state from history prop
+    useEffect(() => {
+        if (prefillData) {
+            setPlatform(prefillData.platform);
+            setTimePeriod(prefillData.timePeriod);
+            if (prefillData.startDate) setStartDate(prefillData.startDate);
+            if (prefillData.endDate) setEndDate(prefillData.endDate);
+            
+            setCurrentMetrics(prefillData.currentMetrics);
+            
+            if (prefillData.previousMetrics) {
+                setPreviousMetrics(prefillData.previousMetrics);
+                setCompare(true);
+            } else {
+                setCompare(false);
+                setPreviousMetrics(initialMetrics);
+            }
+
+            if (prefillData.campaignGoals) {
+                const { targetCPA, targetCTR, targetCVR } = prefillData.campaignGoals;
+                setCampaignGoalsInput({
+                    targetCPA: targetCPA ? formatNumberForDisplay(targetCPA, language, 'targetCPA') : '',
+                    targetCTR: targetCTR ? formatNumberForDisplay(targetCTR * 100, language, 'targetCTR') : '',
+                    targetCVR: targetCVR ? formatNumberForDisplay(targetCVR * 100, language, 'targetCVR') : '',
+                });
+            }
+        }
+    }, [prefillData, language]);
 
   useEffect(() => {
     const calculate = (metrics: CampaignMetrics): CalculatedMetrics => {
@@ -195,7 +226,7 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
     }
   }, [compare, timePeriod, startDate, endDate, language]);
   
-  // Reformat input display values when language changes
+  // Reformat input display values when language changes or prefillData updates
   useEffect(() => {
       const reformatInputs = (metrics: CampaignMetrics, setter: React.Dispatch<React.SetStateAction<typeof initialMetricsInput>>) => {
           setter({
@@ -211,7 +242,7 @@ export const StructuredDataInputForm: React.FC<StructuredDataInputFormProps> = (
           reformatInputs(previousMetrics, setPreviousMetricsInput);
       }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [language]);
+  }, [language, currentMetrics, previousMetrics]);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, period: 'current' | 'previous') => {

@@ -1,4 +1,5 @@
 
+
 export enum DataSource {
   GOOGLE_ADS = "Google Ads",
   META_ADS = "Meta Ads",
@@ -45,6 +46,9 @@ export interface InsightRequest {
   specificQuestions?: string;
   uploadedCreatives?: UploadedImage[];
   brandStyle: BrandStyle; 
+  // Fields for reconstructing state (optional, but helpful for history)
+  rawBlocks?: AggregatedDataBlock[];
+  apiConnections?: ApiConnection[];
 }
 
 export interface GroundingChunkWeb {
@@ -109,6 +113,17 @@ export interface StructuredInsightRequest {
 export enum Language {
   EN = "English",
   ES = "Español",
+}
+
+// --- History Types ---
+
+export interface HistoryItem {
+  id: string;
+  timestamp: number;
+  type: 'aggregated' | 'structured';
+  clientName: string; // Display title
+  previewText: string; // Subtitle context
+  data: InsightRequest | StructuredInsightRequest;
 }
 
 // --- Types for Presentation Generation ---
@@ -468,7 +483,15 @@ export type UIStringKeys =
   | "TIME_PERIOD_14_DAYS"
   | "TIME_PERIOD_30_DAYS"
   | "TIME_PERIOD_90_DAYS"
-  | "TIME_PERIOD_CUSTOM";
+  | "TIME_PERIOD_CUSTOM"
+  | "BUTTON_HISTORY_TOOLTIP"
+  | "HISTORY_PANEL_TITLE"
+  | "HISTORY_TAB_AGGREGATED"
+  | "HISTORY_TAB_STRUCTURED"
+  | "HISTORY_EMPTY_STATE"
+  | "HISTORY_ITEM_DELETE_TOOLTIP"
+  | "HISTORY_ITEM_LOAD_BUTTON"
+  | "HISTORY_CLEAR_ALL";
 
 export interface HelpTopic {
   id: string;

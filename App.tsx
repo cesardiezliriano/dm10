@@ -9,11 +9,13 @@ import { FeedbackButton } from './components/FeedbackButton.tsx';
 import { HelpBotButton } from './components/HelpBotButton.tsx';
 import { HelpBotModal } from './components/HelpBotModal.tsx';
 import { LanguageSwitcher } from './components/LanguageSwitcher.tsx';
+import { HistorySidebar } from './components/HistorySidebar.tsx'; // Import
 import { generateInsightWithGemini, generateStructuredInsight, generatePresentationJson } from './services/geminiService.ts';
 import { generatePptxFromData } from './services/presentationService.ts';
+import { saveToHistory } from './services/historyService.ts'; // Import
 import { BRAND_STYLE_OPTIONS, getText, HELP_TOPICS_LIST } from './constants.ts'; 
 import { initializeMetaSdk } from './services/metaApiService.ts';
-import { InsightRequest, GenerateContentGeminiResponse, GroundingChunk, DataSource, StructuredInsightRequest, Language, PresentationData, UploadedImage, BrandStyle } from './types.ts';
+import { InsightRequest, GenerateContentGeminiResponse, GroundingChunk, DataSource, StructuredInsightRequest, Language, PresentationData, UploadedImage, BrandStyle, HistoryItem } from './types.ts';
 
 type AnalysisMode = "aggregated" | "structured";
 
@@ -31,6 +33,11 @@ const App: React.FC = () => {
   const [isGeneratingPresentation, setIsGeneratingPresentation] = useState<boolean>(false);
   const [presentationError, setPresentationError] = useState<string | null>(null);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState<boolean>(false);
+
+  // History State
+  const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+  const [aggregatedPrefill, setAggregatedPrefill] = useState<InsightRequest | null>(null);
+  const [structuredPrefill, setStructuredPrefill] = useState<StructuredInsightRequest | null>(null);
 
 
   useEffect(() => {
@@ -104,6 +111,15 @@ const App: React.FC = () => {
       if (geminiResponse.candidates && geminiResponse.candidates[0]?.groundingMetadata?.groundingChunks) {
         setGroundingSources(geminiResponse.candidates[0].groundingMetadata.groundingChunks.filter(chunk => chunk.web));
       }
+      
+      // Save to History
+      saveToHistory(
+        'aggregated', 
+        request, 
+        request.clientName || 'Untitled Aggregated Analysis', 
+        `${request.sector || ''} - ${request.campaignMarket || ''}`.trim()
+      );
+
     } catch (e: unknown) {
       console.error("App: Error in handleGenerateAggregatedInsight:", e);
       if (e instanceof Error) {
@@ -142,6 +158,15 @@ const App: React.FC = () => {
        if (geminiResponse.candidates && geminiResponse.candidates[0]?.groundingMetadata?.groundingChunks) {
         setGroundingSources(geminiResponse.candidates[0].groundingMetadata.groundingChunks.filter(chunk => chunk.web));
       }
+
+      // Save to History
+      saveToHistory(
+        'structured', 
+        request, 
+        `Summary: ${request.platform}`, 
+        `${request.currentMetrics.impressions} Impr. / ${request.currentMetrics.clicks} Clicks`
+      );
+
     } catch (e: unknown) {
       console.error("App: Error in handleGenerateStructuredSummary:", e);
       if (e instanceof Error) {
@@ -220,6 +245,24 @@ const App: React.FC = () => {
     }
   }, [insight, lastAggregatedRequest, selectedLanguage]);
 
+  const handleLoadHistoryItem = (item: HistoryItem) => {
+      // Switch mode if needed
+      if (item.type === 'aggregated' && currentMode !== 'aggregated') {
+          handleModeChange('aggregated');
+      } else if (item.type === 'structured' && currentMode !== 'structured') {
+          handleModeChange('structured');
+      }
+
+      // Defer state update slightly to ensure mode switch has processed
+      setTimeout(() => {
+          if (item.type === 'aggregated') {
+              setAggregatedPrefill(item.data as InsightRequest);
+          } else {
+              setStructuredPrefill(item.data as StructuredInsightRequest);
+          }
+      }, 50);
+  };
+
 
   const renderForm = () => {
     if (currentMode === "aggregated") {
@@ -229,9 +272,15 @@ const App: React.FC = () => {
                 language={selectedLanguage}
                 selectedBrandStyle={selectedBrandStyle} 
                 onBrandStyleChange={setSelectedBrandStyle}
+                prefillData={aggregatedPrefill} // Pass history data
              />;
     }
-    return <StructuredDataInputForm onSubmit={handleGenerateStructuredSummary} isLoading={isLoading} language={selectedLanguage} />;
+    return <StructuredDataInputForm 
+              onSubmit={handleGenerateStructuredSummary} 
+              isLoading={isLoading} 
+              language={selectedLanguage}
+              prefillData={structuredPrefill} // Pass history data
+            />;
   };
   
   const getPlaceholderTextForInsightDisplay = () => {
@@ -264,24 +313,38 @@ const App: React.FC = () => {
         </div>
       )}
       
-      <header className="w-full max-w-[95%] 2xl:max-w-7xl mb-6">
-        <div className="flex justify-between items-center py-2">
-            <div className="text-3xl font-extrabold text-[#F54963]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-                LLYC
+      <header className="w-full max-w-[95%] 2xl:max-w-7xl mb-6 flex justify-between items-start">
+        <div className="w-full">
+            <div className="flex justify-between items-center py-2">
+                <div className="text-3xl font-extrabold text-[#F54963]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                    LLYC
+                </div>
+                <div className="flex items-center space-x-4">
+                     <button
+                        onClick={() => setIsHistoryOpen(true)}
+                        className="text-gray-500 hover:text-[#36A7B7] p-1 rounded-full border border-transparent hover:border-gray-200 transition-colors"
+                        title={getText(selectedLanguage, 'BUTTON_HISTORY_TOOLTIP')}
+                     >
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                     </button>
+
+                    <LanguageSwitcher
+                        language={selectedLanguage}
+                        onLanguageChange={setSelectedLanguage}
+                        disabled={isLoading || isGeneratingPresentation}
+                    />
+                </div>
             </div>
-            <LanguageSwitcher
-                language={selectedLanguage}
-                onLanguageChange={setSelectedLanguage}
-                disabled={isLoading || isGeneratingPresentation}
-            />
-        </div>
-        <div className="mt-2">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#F54963] py-2 text-left" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-            {getText(selectedLanguage, 'APP_TITLE')}
-            </h1>
-            <p className="text-[#6D7475] text-sm sm:text-base text-left">
-            {getText(selectedLanguage, 'APP_SUBTITLE')}
-            </p>
+            <div className="mt-2">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#F54963] py-2 text-left" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                {getText(selectedLanguage, 'APP_TITLE')}
+                </h1>
+                <p className="text-[#6D7475] text-sm sm:text-base text-left">
+                {getText(selectedLanguage, 'APP_SUBTITLE')}
+                </p>
+            </div>
         </div>
       </header>
 
@@ -355,6 +418,14 @@ const App: React.FC = () => {
         language={selectedLanguage} 
         topics={HELP_TOPICS_LIST}
       />
+      
+      <HistorySidebar 
+        isOpen={isHistoryOpen} 
+        onClose={() => setIsHistoryOpen(false)}
+        onLoadItem={handleLoadHistoryItem}
+        language={selectedLanguage}
+      />
+
     </div>
   );
 };

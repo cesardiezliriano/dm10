@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { DataSource, InsightRequest, Language, UploadedImage, BrandStyle, AggregatedDataBlock, ApiConnection, TimePeriod } from '../types.ts'; 
 import { 
@@ -24,6 +24,7 @@ interface DataInputFormProps {
   language: Language; 
   selectedBrandStyle: BrandStyle;
   onBrandStyleChange: (style: BrandStyle) => void;
+  prefillData?: InsightRequest | null; // Added prop
 }
 
 const AccordionIcon: React.FC = () => (
@@ -37,7 +38,7 @@ const getISODateString = (date: Date): string => {
 };
 
 
-export const DataInputForm: React.FC<DataInputFormProps> = ({ onSubmit, isLoading, language, selectedBrandStyle, onBrandStyleChange }) => {
+export const DataInputForm: React.FC<DataInputFormProps> = ({ onSubmit, isLoading, language, selectedBrandStyle, onBrandStyleChange, prefillData }) => {
   const [dataBlocks, setDataBlocks] = React.useState<AggregatedDataBlock[]>([]);
   const [clientName, setClientName] = React.useState<string>('');
   const [sector, setSector] = React.useState<string>('');
@@ -53,6 +54,34 @@ export const DataInputForm: React.FC<DataInputFormProps> = ({ onSubmit, isLoadin
   const excelFileInputRef = React.useRef<HTMLInputElement>(null);
   const creativeFileInputRef = React.useRef<HTMLInputElement>(null);
   const timePeriodOptions = getTimePeriodOptions(language);
+
+  // Restore state from history prop
+  useEffect(() => {
+    if (prefillData) {
+        setClientName(prefillData.clientName || '');
+        setSector(prefillData.sector || '');
+        setCampaignMarket(prefillData.campaignMarket || '');
+        setAdditionalContext(prefillData.additionalContext || '');
+        setSpecificQuestions(prefillData.specificQuestions || '');
+        
+        if (prefillData.brandStyle) {
+            onBrandStyleChange(prefillData.brandStyle);
+        }
+        
+        // Restore manual blocks if they were saved (requires saving rawBlocks in App.tsx -> History)
+        if (prefillData.rawBlocks) {
+            setDataBlocks(prefillData.rawBlocks);
+        } else if (dataBlocks.length === 0) {
+            // Fallback: If no raw structure is saved, we don't restore blocks to avoid corrupting manual data
+            // In a real app, we'd ensure `rawBlocks` is always saved.
+        }
+
+        // Restore creatives
+        if (prefillData.uploadedCreatives) {
+            setUploadedCreatives(prefillData.uploadedCreatives);
+        }
+    }
+  }, [prefillData, onBrandStyleChange]);
 
 
   const handleAddDataBlock = () => {
@@ -282,7 +311,9 @@ export const DataInputForm: React.FC<DataInputFormProps> = ({ onSubmit, isLoadin
         additionalContext,
         specificQuestions,
         uploadedCreatives,
-        brandStyle: selectedBrandStyle
+        brandStyle: selectedBrandStyle,
+        rawBlocks: dataBlocks, // Pass this to save state
+        apiConnections: apiConnections // Pass this to save state
     });
     setExcelFileMessage(null); 
     // Do not clear creativeFileMessage here, it might contain important error info from last upload attempt
